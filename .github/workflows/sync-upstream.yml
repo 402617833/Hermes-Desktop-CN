@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           git checkout -b "$BRANCH_NAME"
-          git merge --no-edit upstream/main
+          git merge --no-edit --allow-unrelated-histories upstream/main
           echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
 
       - name: Push sync branch
