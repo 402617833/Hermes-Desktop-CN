@@ -1,2 +1,2 @@
-# Hermes-DeepSeek-CN
+# Hermes-Desktop-CN
 Hermes-DeepSeek中文汉化
