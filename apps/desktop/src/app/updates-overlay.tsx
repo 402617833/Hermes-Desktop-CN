@@ -8,6 +8,7 @@ import { writeClipboardText } from '@/components/ui/copy-button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { ErrorState } from '@/components/ui/error-state'
 import type { DesktopUpdateCommit, DesktopUpdateStage, DesktopUpdateStatus } from '@/global'
+import { openCnReleases } from '@/lib/cn-release'
 import { buildCommitChangelog, type CommitGroup } from '@/lib/commit-changelog'
 import { AlertCircle, Check, CheckCircle2, Copy, Loader2, Sparkles, Terminal } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -16,7 +17,6 @@ import {
   $updateChecking,
   $updateOverlayOpen,
   $updateStatus,
-  applyUpdates,
   checkUpdates,
   resetUpdateApplyState,
   setUpdateOverlayOpen,
@@ -64,7 +64,7 @@ export function UpdatesOverlay() {
   }
 
   const handleInstall = () => {
-    void applyUpdates()
+    openCnReleases()
   }
 
   return (
@@ -209,7 +209,7 @@ function IdleView({
 
       <div className="grid gap-2">
         <Button className="font-semibold" onClick={onInstall} size="lg">
-          {t('updates.updateNow')}
+          {t('updates.openCnReleases')}
         </Button>
         <button
           className="text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"

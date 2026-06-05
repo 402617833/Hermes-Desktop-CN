@@ -13,6 +13,7 @@ import type {
   DesktopUpdateStatus,
   DesktopVersionInfo
 } from '@/global'
+import { openCnReleases } from '@/lib/cn-release'
 import { persistString, storedString } from '@/lib/storage'
 import { dismissNotification, notify } from '@/store/notifications'
 
@@ -85,11 +86,11 @@ export function reportBackendContract(contract: number | undefined): void {
   }
 
   notify({
-    action: { label: 'Update Hermes', onClick: () => void applyUpdates() },
+    action: { label: 'Open Chinese Releases', onClick: () => openCnReleases() },
     durationMs: 0,
     id: SKEW_TOAST_ID,
     kind: 'warning',
-    message: 'Your Hermes backend is older than this desktop build and may not work correctly. Update to align them.',
+    message: 'Your Hermes backend is older than this desktop build. Download the latest Chinese release to align them.',
     title: 'Backend out of date'
   })
 }
@@ -121,10 +122,10 @@ export function maybeNotifyUpdateAvailable(status: DesktopUpdateStatus | null) {
 
   notify({
     action: {
-      label: "See what's new",
+      label: 'Open Chinese Releases',
       onClick: () => {
         snoozeUpdateToast()
-        openUpdatesWindow()
+        openCnReleases()
       }
     },
     durationMs: 0,

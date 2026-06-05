@@ -1,0 +1,103 @@
+name: Build CN Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, for example v0.15.1-cn.1'
+        required: true
+        type: string
+      release_name:
+        description: 'Release name'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build draft Windows release
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout cn-source
+        uses: actions/checkout@v4
+        with:
+          ref: cn-source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Desktop i18n check
+        run: npm --prefix apps/desktop run i18n:check
+
+      - name: Type check
+        run: npm --prefix apps/desktop run type-check
+
+      - name: Lint
+        run: npm --prefix apps/desktop run lint
+
+      - name: Pack desktop app
+        run: npm --prefix apps/desktop run pack
+
+      - name: Create win-unpacked zip
+        shell: pwsh
+        run: |
+          $source = 'apps/desktop/release/win-unpacked'
+          $zip = 'Hermes-Chinese-win-unpacked.zip'
+
+          if (-not (Test-Path $source)) {
+            throw "Expected pack output not found: $source"
+          }
+
+          if (Test-Path $zip) {
+            Remove-Item $zip -Force
+          }
+
+          Compress-Archive -Path "$source/*" -DestinationPath $zip -Force
+
+      - name: Upload release zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hermes-Chinese-win-unpacked
+          path: Hermes-Chinese-win-unpacked.zip
+
+      - name: Create draft GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          RELEASE_NAME: ${{ inputs.release_name }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          $name = $env:RELEASE_NAME
+          if (-not $name) {
+            $name = $env:TAG
+          }
+
+          $args = @(
+            'release', 'create', $env:TAG,
+            'Hermes-Chinese-win-unpacked.zip',
+            '--draft',
+            '--title', $name,
+            '--notes', 'Draft Windows portable build for Hermes Desktop CN.'
+          )
+
+          if ($env:PRERELEASE -eq 'true') {
+            $args += '--prerelease'
+          }
+
+          gh @args

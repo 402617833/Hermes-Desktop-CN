@@ -16,16 +16,27 @@ const STORAGE_KEY = 'hermes_locale'
 function resolveInitial(): SupportedLocale {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'en' || saved === 'zh') return saved
-  } catch {}
+
+    if (saved === 'en' || saved === 'zh') {
+      return saved
+    }
+  } catch {
+    // Ignore unavailable localStorage.
+  }
 
   if (typeof navigator !== 'undefined') {
     const langs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
 
     for (const lang of langs) {
       const lower = (lang || '').toLowerCase()
-      if (lower.startsWith('zh')) return 'zh'
-      if (lower.startsWith('en')) return 'en'
+
+      if (lower.startsWith('zh')) {
+        return 'zh'
+      }
+
+      if (lower.startsWith('en')) {
+        return 'en'
+      }
     }
   }
 
@@ -35,7 +46,9 @@ function resolveInitial(): SupportedLocale {
 export function setLocale(locale: SupportedLocale) {
   try {
     localStorage.setItem(STORAGE_KEY, locale)
-  } catch {}
+  } catch {
+    // Ignore unavailable localStorage.
+  }
 
   void i18next.changeLanguage(locale)
 }

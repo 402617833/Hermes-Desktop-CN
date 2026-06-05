@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { CN_RELEASES_URL } from '@/lib/cn-release'
 import { Loader2, RefreshCw, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import {
@@ -17,8 +18,6 @@ import {
 } from '@/store/updates'
 
 import { ListRow, SectionHeading, SettingsContent } from './primitives'
-
-const RELEASE_NOTES_URL = 'https://github.com/NousResearch/hermes-agent/releases'
 
 function relativeTime(ms: number | undefined, t: TFunction) {
   if (!ms) {
@@ -141,10 +140,10 @@ export function AboutSettings() {
 
             <Button asChild className="ml-auto" size="sm" variant="text">
               <a
-                href={RELEASE_NOTES_URL}
+                href={CN_RELEASES_URL}
                 onClick={event => {
                   event.preventDefault()
-                  void window.hermesDesktop?.openExternal?.(RELEASE_NOTES_URL)
+                  void window.hermesDesktop?.openExternal?.(CN_RELEASES_URL)
                 }}
                 rel="noreferrer"
                 target="_blank"

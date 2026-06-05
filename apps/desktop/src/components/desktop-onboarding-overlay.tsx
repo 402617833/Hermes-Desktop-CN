@@ -234,12 +234,23 @@ function Preparing({ boot }: { boot: DesktopBootState }) {
   const hasError = Boolean(boot.error)
   const installing = boot.phase.startsWith('runtime.')
 
-  // Map boot phases to translation keys
   const getSubtitle = () => {
-    if (boot.phase === 'gateway') return t('onboarding.subtitles.gateway')
-    if (boot.phase === 'bootstrap') return t('onboarding.subtitles.bootstrap')
-    if (boot.phase === 'models') return t('onboarding.subtitles.models')
-    if (boot.phase === 'ready') return t('onboarding.subtitles.ready')
+    if (boot.phase === 'gateway') {
+      return t('onboarding.subtitles.gateway')
+    }
+
+    if (boot.phase === 'bootstrap') {
+      return t('onboarding.subtitles.bootstrap')
+    }
+
+    if (boot.phase === 'models') {
+      return t('onboarding.subtitles.models')
+    }
+
+    if (boot.phase === 'ready') {
+      return t('onboarding.subtitles.ready')
+    }
+
     return boot.message
   }
 

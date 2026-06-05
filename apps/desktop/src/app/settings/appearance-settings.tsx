@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { SUPPORTED_LOCALES, setLocale, type SupportedLocale } from '@/i18n'
+import { setLocale, SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { Check } from '@/lib/icons'
 import { cn } from '@/lib/utils'

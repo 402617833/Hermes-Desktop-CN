@@ -1,5 +1,4 @@
 import { type CSSProperties, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import introCopyJsonl from './intro-copy.jsonl?raw'
 
