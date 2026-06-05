@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Tip } from '@/components/ui/tooltip'
@@ -33,7 +32,6 @@ function workspaceLabel(cwd: null | string | undefined): string {
 }
 
 export function SessionsSettings() {
-  const { t } = useTranslation()
   const [sessions, setLocalSessions] = useState<SessionInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -45,7 +43,7 @@ export function SessionsSettings() {
       const result = await listSessions(ARCHIVED_FETCH_LIMIT, 0, 'only')
       setLocalSessions(result.sessions)
     } catch (err) {
-      notifyError(err, t('settings.archivedSessions.loadFailed'))
+      notifyError(err, 'Could not load archived sessions')
     } finally {
       setLoading(false)
     }
@@ -59,32 +57,32 @@ export function SessionsSettings() {
     setBusyId(session.id)
 
     try {
-      await setSessionArchived(session.id, false)
+      await setSessionArchived(session.id, false, session.profile)
       setLocalSessions(prev => prev.filter(s => s.id !== session.id))
       // Surface it again in the sidebar without waiting for a full refresh.
       setSessions(prev => [{ ...session, archived: false }, ...prev.filter(s => s.id !== session.id)])
       triggerHaptic('selection')
-      notify({ durationMs: 2_000, kind: 'success', message: t('settings.archivedSessions.restored') })
+      notify({ durationMs: 2_000, kind: 'success', message: 'Restored' })
     } catch (err) {
-      notifyError(err, t('settings.archivedSessions.unarchiveFailed'))
+      notifyError(err, 'Unarchive failed')
     } finally {
       setBusyId(null)
     }
   }, [])
 
   const remove = useCallback(async (session: SessionInfo) => {
-    if (!window.confirm(t('settings.archivedSessions.deleteConfirm', { title: sessionTitle(session) }))) {
+    if (!window.confirm(`Permanently delete "${sessionTitle(session)}"? This cannot be undone.`)) {
       return
     }
 
     setBusyId(session.id)
 
     try {
-      await deleteSession(session.id)
+      await deleteSession(session.id, session.profile)
       setLocalSessions(prev => prev.filter(s => s.id !== session.id))
       triggerHaptic('warning')
     } catch (err) {
-      notifyError(err, t('settings.archivedSessions.deleteFailed'))
+      notifyError(err, 'Delete failed')
     } finally {
       setBusyId(null)
     }
@@ -97,7 +95,7 @@ export function SessionsSettings() {
   })
 
   if (loading) {
-    return <LoadingState label={t('settings.archivedSessions.loading')} />
+    return <LoadingState label="Loading archived sessions…" />
   }
 
   return (
@@ -107,14 +105,15 @@ export function SessionsSettings() {
       <SectionHeading
         icon={Archive}
         meta={sessions.length ? String(sessions.length) : undefined}
-        title={t('settings.archivedSessions.title')}
+        title="Archived sessions"
       />
       <p className="mb-2 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-        {t('settings.archivedSessions.description')}
+        Archived chats are hidden from the sidebar but keep all their messages. Ctrl/⌘-click a chat in the sidebar to
+        archive it.
       </p>
 
       {sessions.length === 0 ? (
-        <EmptyState description={t('settings.archivedSessions.emptyDescription')} title={t('settings.archivedSessions.emptyTitle')} />
+        <EmptyState description="Archive a chat to hide it here." title="Nothing archived" />
       ) : (
         <div className="grid gap-1">
           {sessions.map(session => {
@@ -134,11 +133,11 @@ export function SessionsSettings() {
                         variant="textStrong"
                       >
                         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <ArchiveOff className="size-3.5" />}
-                        <span>{t('settings.archivedSessions.unarchive')}</span>
+                        <span>Unarchive</span>
                       </Button>
-                      <Tip label={t('settings.archivedSessions.deletePermanently')}>
+                      <Tip label="Delete permanently">
                         <Button
-                          aria-label={t('settings.archivedSessions.deletePermanently')}
+                          aria-label="Delete permanently"
                           className="text-muted-foreground hover:text-destructive"
                           disabled={busy}
                           onClick={() => void remove(session)}
@@ -152,7 +151,7 @@ export function SessionsSettings() {
                     </div>
                   }
                   description={session.preview || undefined}
-                  hint={label ? t('settings.archivedSessions.messageCountWithWorkspace', { workspace: label, count: session.message_count }) : t('settings.archivedSessions.messageCount', { count: session.message_count })}
+                  hint={label ? `${label} · ${session.message_count} messages` : `${session.message_count} messages`}
                   title={sessionTitle(session)}
                 />
               </div>
@@ -168,7 +167,6 @@ export function SessionsSettings() {
 // builds on Windows used to spawn sessions in the install dir (`win-unpacked`
 // / Program Files), which buried any files Hermes wrote there.
 function DefaultProjectDirSetting() {
-  const { t } = useTranslation()
   const [dir, setDir] = useState<null | string>(null)
   const [fallback, setFallback] = useState<string>('')
   const [busy, setBusy] = useState(false)
@@ -219,9 +217,9 @@ function DefaultProjectDirSetting() {
 
       const result = await settings.setDefaultProjectDir(picked.dir)
       setDir(result.dir)
-      notify({ durationMs: 2_000, kind: 'success', message: t('settings.workspace.defaultProjectDir.updated') })
+      notify({ durationMs: 2_000, kind: 'success', message: 'Default project directory updated' })
     } catch (err) {
-      notifyError(err, t('settings.workspace.defaultProjectDir.updateFailed'))
+      notifyError(err, 'Could not update default directory')
     } finally {
       setBusy(false)
     }
@@ -240,7 +238,7 @@ function DefaultProjectDirSetting() {
       await settings.setDefaultProjectDir(null)
       setDir(null)
     } catch (err) {
-      notifyError(err, t('settings.workspace.defaultProjectDir.clearFailed'))
+      notifyError(err, 'Could not clear default directory')
     } finally {
       setBusy(false)
     }
@@ -248,26 +246,26 @@ function DefaultProjectDirSetting() {
 
   return (
     <div className="mb-6">
-      <SectionHeading icon={FolderOpen} title={t('settings.workspace.defaultProjectDir.title')} />
+      <SectionHeading icon={FolderOpen} title="Default project directory" />
       <p className="mb-2 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-        {t('settings.workspace.defaultProjectDir.description')}
+        New sessions start in this folder unless you pick another. Leave it unset to use your home directory.
       </p>
       <ListRow
         action={
           <div className="flex items-center gap-3">
             <Button disabled={busy} onClick={() => void choose()} size="sm" type="button" variant="textStrong">
               <FolderOpen className="size-3.5" />
-              <span>{dir ? t('settings.workspace.defaultProjectDir.change') : t('settings.workspace.defaultProjectDir.choose')}</span>
+              <span>{dir ? 'Change' : 'Choose'}</span>
             </Button>
             {dir && (
               <Button disabled={busy} onClick={() => void clear()} size="sm" type="button" variant="text">
-                {t('settings.workspace.defaultProjectDir.clear')}
+                Clear
               </Button>
             )}
           </div>
         }
-        description={dir || t('settings.workspace.defaultProjectDir.defaultsTo', { path: fallback || '~/hermes-projects' })}
-        title={dir ? dir : t('settings.workspace.defaultProjectDir.notSet')}
+        description={dir || `Defaults to ${fallback || '~/hermes-projects'}.`}
+        title={dir ? dir : 'Not set'}
       />
     </div>
   )

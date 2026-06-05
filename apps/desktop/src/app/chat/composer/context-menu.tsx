@@ -1,6 +1,4 @@
-import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -13,29 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { useI18n } from '@/i18n'
 import { Clipboard, FileText, FolderOpen, type IconComponent, ImageIcon, Link, MessageSquareText } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 import { GHOST_ICON_BTN } from './controls'
 import type { ChatBarState } from './types'
 
-const PROMPT_SNIPPETS: readonly PromptSnippet[] = [
-  {
-    descriptionKey: 'chat.composer.snippet.codeReview.description',
-    labelKey: 'chat.composer.snippet.codeReview.label',
-    textKey: 'chat.composer.snippet.codeReview.text'
-  },
-  {
-    descriptionKey: 'chat.composer.snippet.implementationPlan.description',
-    labelKey: 'chat.composer.snippet.implementationPlan.label',
-    textKey: 'chat.composer.snippet.implementationPlan.text'
-  },
-  {
-    descriptionKey: 'chat.composer.snippet.explainThis.description',
-    labelKey: 'chat.composer.snippet.explainThis.label',
-    textKey: 'chat.composer.snippet.explainThis.text'
-  }
-]
+const SNIPPET_KEYS = ['codeReview', 'implementationPlan', 'explainThis']
 
 export function ContextMenu({
   state,
@@ -46,11 +29,12 @@ export function ContextMenu({
   onPickFolders,
   onPickImages
 }: ContextMenuProps) {
+  const { t } = useI18n()
+  const c = t.composer
   // Prompt snippets used to be a Radix submenu. That submenu didn't open
   // reliably when the parent menu was positioned at the bottom of the
   // window (composer "+" anchor), so we promoted it to a real Dialog —
   // easier to grow with search / descriptions, and no positioning math.
-  const { t } = useTranslation()
   const [snippetsOpen, setSnippetsOpen] = useState(false)
 
   return (
@@ -74,80 +58,81 @@ export function ContextMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-60" side="top" sideOffset={10}>
           <DropdownMenuLabel className="text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground/85">
-            {t('chat.composer.attach')}
+            {c.attachLabel}
           </DropdownMenuLabel>
           <ContextMenuItem disabled={!onPickFiles} icon={FileText} onSelect={onPickFiles}>
-            {t('chat.composer.attachFiles')}
+            {c.files}
           </ContextMenuItem>
           <ContextMenuItem disabled={!onPickFolders} icon={FolderOpen} onSelect={onPickFolders}>
-            {t('chat.composer.attachFolder')}
+            {c.folder}
           </ContextMenuItem>
           <ContextMenuItem disabled={!onPickImages} icon={ImageIcon} onSelect={onPickImages}>
-            {t('chat.composer.attachImages')}
+            {c.images}
           </ContextMenuItem>
           <ContextMenuItem disabled={!onPasteClipboardImage} icon={Clipboard} onSelect={onPasteClipboardImage}>
-            {t('chat.composer.pasteImage')}
+            {c.pasteImage}
           </ContextMenuItem>
           <ContextMenuItem icon={Link} onSelect={onOpenUrlDialog}>
-            {t('chat.composer.attachUrl')}
+            {c.url}
           </ContextMenuItem>
 
           <DropdownMenuSeparator />
 
           <ContextMenuItem icon={MessageSquareText} onSelect={() => setSnippetsOpen(true)}>
-            {t('chat.composer.promptSnippetsMenu')}
+            {c.promptSnippets}
           </ContextMenuItem>
 
           <DropdownMenuSeparator />
 
           <div className="px-2 py-1 text-[0.7rem] text-muted-foreground/80">
-            {t('chat.composer.fileReferenceTipPrefix')} <kbd className="rounded bg-muted/70 px-1 py-px font-mono text-[0.65rem]">@</kbd>{' '}
-            {t('chat.composer.fileReferenceTipSuffix')}
+            {c.tipPre}
+            <kbd className="rounded bg-muted/70 px-1 py-px font-mono text-[0.65rem]">@</kbd>
+            {c.tipPost}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <PromptSnippetsDialog
-        onInsertText={onInsertText}
-        onOpenChange={setSnippetsOpen}
-        open={snippetsOpen}
-        snippets={PROMPT_SNIPPETS}
-      />
+      <PromptSnippetsDialog onInsertText={onInsertText} onOpenChange={setSnippetsOpen} open={snippetsOpen} />
     </>
   )
 }
 
-function PromptSnippetsDialog({ onInsertText, onOpenChange, open, snippets }: PromptSnippetsDialogProps) {
-  const { t } = useTranslation()
+function PromptSnippetsDialog({ onInsertText, onOpenChange, open }: PromptSnippetsDialogProps) {
+  const { t } = useI18n()
+  const c = t.composer
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-md gap-3">
         <DialogHeader>
-          <DialogTitle>{t('chat.composer.promptSnippetsTitle')}</DialogTitle>
-          <DialogDescription>{t('chat.composer.promptSnippetsDescription')}</DialogDescription>
+          <DialogTitle>{c.snippetsTitle}</DialogTitle>
+          <DialogDescription>{c.snippetsDesc}</DialogDescription>
         </DialogHeader>
         <ul className="grid gap-1">
-          {snippets.map(snippet => (
-            <li key={snippet.labelKey}>
-              <button
-                className="group/snippet flex w-full items-start gap-2.5 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-(--ui-stroke-tertiary) hover:bg-(--ui-control-hover-background) focus-visible:border-(--ui-stroke-tertiary) focus-visible:bg-(--ui-control-hover-background) focus-visible:outline-none"
-                onClick={() => {
-                  onInsertText(t(snippet.textKey))
-                  onOpenChange(false)
-                }}
-                type="button"
-              >
-                <MessageSquareText className="mt-0.5 size-3.5 shrink-0 text-(--ui-text-tertiary) group-hover/snippet:text-foreground" />
-                <span className="grid min-w-0 gap-0.5">
-                  <span className="text-sm font-medium text-foreground">{t(snippet.labelKey)}</span>
-                  <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-                    {t(snippet.descriptionKey)}
+          {SNIPPET_KEYS.map(key => {
+            const snippet = c.snippets[key]
+
+            return (
+              <li key={key}>
+                <button
+                  className="group/snippet flex w-full cursor-pointer items-start gap-2.5 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-(--ui-stroke-tertiary) hover:bg-(--ui-control-hover-background) focus-visible:border-(--ui-stroke-tertiary) focus-visible:bg-(--ui-control-hover-background) focus-visible:outline-none"
+                  onClick={() => {
+                    onInsertText(snippet.text)
+                    onOpenChange(false)
+                  }}
+                  type="button"
+                >
+                  <MessageSquareText className="mt-0.5 size-3.5 shrink-0 text-(--ui-text-tertiary) group-hover/snippet:text-foreground" />
+                  <span className="grid min-w-0 gap-0.5">
+                    <span className="text-sm font-medium text-foreground">{snippet.label}</span>
+                    <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
+                      {snippet.description}
+                    </span>
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </DialogContent>
     </Dialog>
@@ -164,7 +149,7 @@ export function ContextMenuItem({ children, disabled, icon: Icon, onSelect }: Co
 }
 
 interface ContextMenuItemProps {
-  children: ReactNode
+  children: string
   disabled?: boolean
   icon: IconComponent
   onSelect?: () => void
@@ -180,15 +165,8 @@ interface ContextMenuProps {
   state: ChatBarState
 }
 
-interface PromptSnippet {
-  descriptionKey: string
-  labelKey: string
-  textKey: string
-}
-
 interface PromptSnippetsDialogProps {
   onInsertText: (text: string) => void
   onOpenChange: (open: boolean) => void
   open: boolean
-  snippets: readonly PromptSnippet[]
 }

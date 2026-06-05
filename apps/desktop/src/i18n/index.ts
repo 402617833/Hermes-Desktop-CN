@@ -1,56 +1,20 @@
-import i18next from 'i18next'
-import { initReactI18next } from 'react-i18next'
-
-import en from './locales/en'
-import zh from './locales/zh'
-
-export type SupportedLocale = 'en' | 'zh'
-
-export const SUPPORTED_LOCALES: { code: SupportedLocale; label: string }[] = [
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: '中文' }
-]
-
-const STORAGE_KEY = 'hermes_locale'
-
-function resolveInitial(): SupportedLocale {
-  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
-
-  if (saved === 'en' || saved === 'zh') {
-    return saved
-  }
-
-  if (typeof navigator !== 'undefined') {
-    const langs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
-
-    for (const lang of langs) {
-      const lower = (lang || '').toLowerCase()
-
-      if (lower.startsWith('zh')) {return 'zh'}
-
-      if (lower.startsWith('en')) {return 'en'}
-    }
-  }
-
-  return 'en'
-}
-
-export function setLocale(locale: SupportedLocale) {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, locale)
-  }
-
-  void i18next.changeLanguage(locale)
-}
-
-void i18next.use(initReactI18next).init({
-  resources: {
-    en: { translation: en },
-    zh: { translation: zh }
-  },
-  lng: resolveInitial(),
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false },
-  returnEmptyString: false,
-  returnNull: false
-})
+export { TRANSLATIONS } from './catalog'
+export {
+  getConfigDisplayLanguage,
+  type I18nConfigClient,
+  type I18nContextValue,
+  I18nProvider,
+  LOCALE_META,
+  useI18n,
+  withConfigDisplayLanguage
+} from './context'
+export {
+  DEFAULT_LOCALE,
+  isLocale,
+  isSupportedLocaleValue,
+  LOCALE_OPTIONS,
+  localeConfigValue,
+  normalizeLocale
+} from './languages'
+export { setRuntimeI18nLocale, translateNow } from './runtime'
+export type { Locale, Translations } from './types'

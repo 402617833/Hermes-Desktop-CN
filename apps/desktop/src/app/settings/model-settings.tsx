@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,18 +14,20 @@ import { ListRow, LoadingState, Pill, SectionHeading } from './primitives'
 // hints make the assignments readable; raw task keys (vision, mcp, …) are
 // opaque to most users.
 interface AuxTaskMeta {
+  hint: string
   key: string
+  label: string
 }
 
 const AUX_TASKS: readonly AuxTaskMeta[] = [
-  { key: 'vision' },
-  { key: 'web_extract' },
-  { key: 'compression' },
-  { key: 'skills_hub' },
-  { key: 'approval' },
-  { key: 'mcp' },
-  { key: 'title_generation' },
-  { key: 'curator' }
+  { key: 'vision', label: 'Vision', hint: 'Image analysis' },
+  { key: 'web_extract', label: 'Web extract', hint: 'Page summarization' },
+  { key: 'compression', label: 'Compression', hint: 'Context compaction' },
+  { key: 'skills_hub', label: 'Skills hub', hint: 'Skill search' },
+  { key: 'approval', label: 'Approval', hint: 'Smart auto-approve' },
+  { key: 'mcp', label: 'MCP', hint: 'MCP tool routing' },
+  { key: 'title_generation', label: 'Title gen', hint: 'Session titles' },
+  { key: 'curator', label: 'Curator', hint: 'Skill-usage review' }
 ]
 
 const NO_PROVIDERS: readonly ModelOptionProvider[] = [{ name: '—', slug: '', models: [] }]
@@ -37,7 +38,6 @@ interface ModelSettingsProps {
 }
 
 export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
-  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [mainModel, setMainModel] = useState<{ model: string; provider: string } | null>(null)
@@ -191,19 +191,19 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
   }, [mainModel, refresh])
 
   if (loading && !mainModel) {
-    return <LoadingState label={t('settings.model.loading')} />
+    return <LoadingState label="Loading model configuration..." />
   }
 
   return (
     <div className="grid gap-6">
       <section>
         <p className="mb-3 text-xs text-muted-foreground">
-          {t('settings.model.newSessionsDescription')}
+          Applies to new sessions. Use the model picker in the composer to hot-swap the active chat.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Select onValueChange={setSelectedProvider} value={selectedProvider}>
             <SelectTrigger className={cn('min-w-40', CONTROL_TEXT)}>
-              <SelectValue placeholder={t('settings.model.provider')} />
+              <SelectValue placeholder="Provider" />
             </SelectTrigger>
             <SelectContent>
               {providerOptions.map(provider => (
@@ -215,7 +215,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
           </Select>
           <Select onValueChange={setSelectedModel} value={selectedModel}>
             <SelectTrigger className={cn('min-w-60', CONTROL_TEXT)}>
-              <SelectValue placeholder={t('settings.model.model')} />
+              <SelectValue placeholder="Model" />
             </SelectTrigger>
             <SelectContent>
               {(selectedProviderModels.length ? selectedProviderModels : []).map(model => (
@@ -231,7 +231,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
             size="sm"
           >
             {applying && <Loader2 className="size-3.5 animate-spin" />}
-            {applying ? t('settings.model.applying') : t('settings.model.apply')}
+            {applying ? 'Applying...' : 'Apply'}
           </Button>
         </div>
         {error && <div className="mt-2 text-xs text-destructive">{error}</div>}
@@ -239,18 +239,18 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
 
       <section>
         <div className="mb-2.5 flex items-center justify-between">
-          <SectionHeading icon={Cpu} title={t('settings.model.auxiliaryModels')} />
+          <SectionHeading icon={Cpu} title="Auxiliary models" />
           <Button
             disabled={!mainModel || applying}
             onClick={() => void resetAuxiliaryModels()}
             size="sm"
             variant="textStrong"
           >
-            {t('settings.model.resetAllToMain')}
+            Reset all to main
           </Button>
         </div>
         <p className="mb-2 text-xs text-muted-foreground">
-          {t('settings.model.auxiliaryDescription')}
+          Helper tasks run on the main model by default. Assign a dedicated model to any task to override.
         </p>
         <div className="grid gap-1">
           {AUX_TASKS.map(meta => {
@@ -269,7 +269,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         size="sm"
                         variant="text"
                       >
-                        {t('settings.model.setToMain')}
+                        Set to main
                       </Button>
                       <Button
                         disabled={!providers.length || applying}
@@ -277,7 +277,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         size="sm"
                         variant="textStrong"
                       >
-                        {t('settings.model.change')}
+                        Change
                       </Button>
                     </div>
                   )
@@ -290,7 +290,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         value={auxDraft.provider}
                       >
                         <SelectTrigger className={cn('min-w-32', CONTROL_TEXT)}>
-                          <SelectValue placeholder={t('settings.model.provider')} />
+                          <SelectValue placeholder="Provider" />
                         </SelectTrigger>
                         <SelectContent>
                           {providerOptions.map(provider => (
@@ -305,7 +305,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         value={auxDraft.model}
                       >
                         <SelectTrigger className={cn('min-w-48', CONTROL_TEXT)}>
-                          <SelectValue placeholder={t('settings.model.model')} />
+                          <SelectValue placeholder="Model" />
                         </SelectTrigger>
                         <SelectContent>
                           {(auxDraftProviderModels.length ? auxDraftProviderModels : []).map(model => (
@@ -320,10 +320,10 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         onClick={() => void applyAuxiliaryDraft(meta.key)}
                         size="sm"
                       >
-                        {applying ? t('settings.model.applying') : t('settings.model.apply')}
+                        {applying ? 'Applying...' : 'Apply'}
                       </Button>
                       <Button onClick={() => setEditingAuxTask(null)} size="sm" variant="ghost">
-                        {t('settings.credentials.cancel')}
+                        Cancel
                       </Button>
                     </div>
                   )
@@ -331,15 +331,15 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                 description={
                   <span className="font-mono text-[0.68rem]">
                     {isAuto
-                      ? t('settings.model.autoUseMain')
-                      : `${current.provider} · ${current.model || `(${t('settings.model.providerDefault')})`}`}
+                      ? 'auto · use main model'
+                      : `${current.provider} · ${current.model || '(provider default)'}`}
                   </span>
                 }
                 key={meta.key}
                 title={
                   <span className="flex items-baseline gap-2">
-                    {t(`settings.model.tasks.${meta.key}.label`)}
-                    <Pill>{t(`settings.model.tasks.${meta.key}.hint`)}</Pill>
+                    {meta.label}
+                    <Pill>{meta.hint}</Pill>
                   </span>
                 }
               />

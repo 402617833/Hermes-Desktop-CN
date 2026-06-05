@@ -1,10 +1,10 @@
 import { useStore } from '@nanostores/react'
-import type { TFunction } from 'i18next'
 import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCw, Sparkles } from '@/lib/icons'
+import { type Translations, useI18n } from '@/i18n'
+import { CN_RELEASES_URL } from '@/lib/cn-release'
+import { CheckCircle2, ExternalLink, Loader2, RefreshCw, Sparkles } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import {
   $desktopVersion,
@@ -18,32 +18,33 @@ import {
 
 import { ListRow, SectionHeading, SettingsContent } from './primitives'
 
-const RELEASE_NOTES_URL = 'https://github.com/NousResearch/hermes-agent/releases'
+const RELEASE_NOTES_URL = CN_RELEASES_URL
 
-function relativeTime(ms: number | undefined, t: TFunction) {
+function relativeTime(ms: number | undefined, a: Translations['settings']['about']) {
   if (!ms) {
-    return t('relativeTime.never')
+    return a.never
   }
 
   const diff = Date.now() - ms
 
   if (diff < 60_000) {
-    return t('relativeTime.justNow')
+    return a.justNow
   }
 
   if (diff < 3_600_000) {
-    return t('relativeTime.minutesAgo', { count: Math.round(diff / 60_000) })
+    return a.minAgo(Math.round(diff / 60_000))
   }
 
   if (diff < 86_400_000) {
-    return t('relativeTime.hoursAgo', { count: Math.round(diff / 3_600_000) })
+    return a.hoursAgo(Math.round(diff / 3_600_000))
   }
 
-  return t('relativeTime.daysAgo', { count: Math.round(diff / 86_400_000) })
+  return a.daysAgo(Math.round(diff / 86_400_000))
 }
 
 export function AboutSettings() {
-  const { t } = useTranslation()
+  const { t } = useI18n()
+  const a = t.settings.about
   const version = useStore($desktopVersion)
   const status = useStore($updateStatus)
   const apply = useStore($updateApply)
@@ -72,21 +73,21 @@ export function AboutSettings() {
   let statusTone: 'idle' | 'available' | 'error' = 'idle'
 
   if (!supported) {
-    statusLine = status?.message ?? t('settings.about.updates.unsupported')
+    statusLine = status?.message ?? a.cantUpdate
     statusTone = 'error'
   } else if (status?.error) {
-    statusLine = t('settings.about.updates.serverUnreachable')
+    statusLine = a.cantReach
     statusTone = 'error'
   } else if (applying) {
-    statusLine = t('settings.about.updates.installing')
+    statusLine = a.installing
     statusTone = 'available'
   } else if (behind > 0) {
-    statusLine = t('settings.about.updates.ready', { count: behind })
+    statusLine = a.updateReady(behind)
     statusTone = 'available'
   } else if (status) {
-    statusLine = t('settings.about.updates.latest')
+    statusLine = a.onLatest
   } else {
-    statusLine = t('settings.about.updates.promptCheck')
+    statusLine = a.tapCheck
   }
 
   return (
@@ -96,15 +97,15 @@ export function AboutSettings() {
           <Sparkles className="size-8" />
         </span>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{t('settings.about.appName')}</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{a.heading}</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            {version?.appVersion ? t('settings.about.version', { version: version.appVersion }) : t('settings.about.versionUnavailable')}
+            {version?.appVersion ? a.version(version.appVersion) : a.versionUnavailable}
           </p>
         </div>
       </div>
 
       <div className="mx-auto mt-4 w-full max-w-2xl">
-        <SectionHeading icon={RefreshCw} title={t('settings.about.updates.title')} />
+        <SectionHeading icon={RefreshCw} title={a.updates} />
 
         <div
           className={cn(
@@ -114,12 +115,19 @@ export function AboutSettings() {
             statusTone === 'idle' && 'border-border/70 bg-muted/20 text-foreground'
           )}
         >
-          <div className="min-w-0">
-            <p className="font-medium">{statusLine}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('settings.about.updates.lastChecked', { time: relativeTime(status?.fetchedAt, t) })}
-              {justChecked && !checking ? ' · ' + t('relativeTime.justNow') : ''}
-            </p>
+          <div className="flex items-start gap-2">
+            {statusTone === 'available' ? (
+              <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+            ) : statusTone === 'error' ? null : (
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <div className="min-w-0">
+              <p className="font-medium">{statusLine}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {a.lastChecked(relativeTime(status?.fetchedAt, a))}
+                {justChecked && !checking ? a.justNowSuffix : ''}
+              </p>
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-4">
@@ -129,13 +137,13 @@ export function AboutSettings() {
               size="sm"
               variant="textStrong"
             >
-              {checking && <Loader2 className="size-3 animate-spin" />}
-              {checking ? t('settings.about.updates.checking') : t('settings.about.updates.checkNow')}
+              {checking ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+              {checking ? a.checking : a.checkNow}
             </Button>
 
             {behind > 0 && supported && !applying && (
               <Button onClick={() => openUpdatesWindow()} size="sm">
-                {t('settings.about.updates.seeWhatsNew')}
+                {a.seeWhatsNew}
               </Button>
             )}
 
@@ -149,19 +157,17 @@ export function AboutSettings() {
                 rel="noreferrer"
                 target="_blank"
               >
-                {t('settings.about.updates.releaseNotes')}
+                <ExternalLink className="size-3" />
+                {a.releaseNotes}
               </a>
             </Button>
           </div>
         </div>
 
         <ListRow
-          description={t('settings.about.updates.automaticDescription')}
-          hint={t('settings.about.updates.branchCommit', {
-            branch: status?.branch ?? t('common.unknown'),
-            commit: status?.currentSha?.slice(0, 7) ?? t('common.unknown')
-          })}
-          title={t('settings.about.updates.automaticTitle')}
+          description={a.automaticUpdatesDesc}
+          hint={a.branchCommit(status?.branch ?? 'unknown', status?.currentSha?.slice(0, 7) ?? 'unknown')}
+          title={a.automaticUpdates}
         />
       </div>
     </SettingsContent>

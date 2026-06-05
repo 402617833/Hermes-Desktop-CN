@@ -1,6 +1,5 @@
 import { useStore } from '@nanostores/react'
 import { useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   FEATURED_ID,
@@ -65,7 +64,7 @@ function buildProviderKeyGroups(vars: Record<string, EnvVarInfo>): ProviderKeyGr
       advanced: entries
         .filter(([k, i]) => k !== primary[0] && (!isKeyVar(k, i) || i.is_set))
         .sort(([a], [b]) => a.localeCompare(b)),
-      description: meta?.descriptionKey ?? meta?.description ?? primary[1].description,
+      description: meta?.description ?? primary[1].description,
       docsUrl: meta?.docsUrl ?? primary[1].url ?? undefined,
       hasAnySet: entries.some(([, i]) => i.is_set),
       name,
@@ -86,7 +85,6 @@ function buildProviderKeyGroups(vars: Record<string, EnvVarInfo>): ProviderKeyGr
 // that provider's real sign-in flow; the key affordances open the API-key
 // catalog below.
 function OAuthPicker({ onWantApiKey, providers }: { onWantApiKey: () => void; providers: OAuthProvider[] }) {
-  const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const ordered = useMemo(() => sortProviders(providers), [providers])
 
@@ -108,24 +106,25 @@ function OAuthPicker({ onWantApiKey, providers }: { onWantApiKey: () => void; pr
   return (
     <section className="mb-5 grid gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <SettingsCategoryHeading icon={KeyRound} title={t('settings.providers.connectAccount')} />
+        <SettingsCategoryHeading icon={KeyRound} title="Connect an account" />
         <Button
           className="h-auto px-0 py-0 text-[length:var(--conversation-caption-font-size)]"
           onClick={onWantApiKey}
           type="button"
           variant="textStrong"
         >
-          {t('settings.providers.useApiKeyInstead')}
+          Have an API key instead?
         </Button>
       </div>
       <p className="-mt-2 mb-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-        {t('settings.providers.oauthHint')}
+        Sign in with a subscription — no API key to copy. Hermes runs the browser sign-in for you, right here in the
+        app.
       </p>
       {featured && <FeaturedProviderRow onSelect={select} provider={featured} />}
       {connected.length > 0 && (
         <>
           <p className="mt-1 px-0.5 text-[length:var(--conversation-caption-font-size)] font-medium text-(--ui-text-tertiary)">
-            {t('settings.providers.connected')}
+            Connected
           </p>
           {connected.map(p => (
             <ProviderRow key={p.id} onSelect={select} provider={p} />
@@ -147,11 +146,7 @@ function OAuthPicker({ onWantApiKey, providers }: { onWantApiKey: () => void; pr
           type="button"
           variant="text"
         >
-          {showAll
-            ? t('common.collapse')
-            : connected.length > 0
-              ? t('settings.providers.connectAnother')
-              : t('settings.providers.otherProviders')}
+          {showAll ? 'Collapse' : connected.length > 0 ? 'Connect another provider' : 'Other providers'}
           <ChevronDown className={cn('size-3.5 transition', showAll && 'rotate-180')} />
         </Button>
       )}
@@ -160,17 +155,14 @@ function OAuthPicker({ onWantApiKey, providers }: { onWantApiKey: () => void; pr
 }
 
 function NoProviderKeys() {
-  const { t } = useTranslation()
-
   return (
     <div className="grid min-h-32 place-items-center px-4 py-8 text-center text-[length:var(--conversation-caption-font-size)] text-muted-foreground">
-      {t('settings.providers.noKeys')}
+      No provider API keys available.
     </div>
   )
 }
 
 export function ProvidersSettings({ onViewChange, view }: ProvidersSettingsProps) {
-  const { t } = useTranslation()
   const { rowProps, vars } = useEnvCredentials()
   const [oauthProviders, setOauthProviders] = useState<OAuthProvider[]>([])
   const [openProvider, setOpenProvider] = useState<null | string>(null)
@@ -203,7 +195,7 @@ export function ProvidersSettings({ onViewChange, view }: ProvidersSettingsProps
   }, [onboardingActive])
 
   if (!vars) {
-    return <LoadingState label={t('settings.providers.loading')} />
+    return <LoadingState label="Loading providers..." />
   }
 
   const hasOauth = oauthProviders.length > 0

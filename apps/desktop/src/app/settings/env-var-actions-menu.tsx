@@ -1,5 +1,4 @@
 import type * as React from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -42,7 +41,6 @@ export function EnvVarActionsMenu({
   showReveal = true,
   sideOffset = 6
 }: EnvVarActionsMenuProps) {
-  const { t } = useTranslation()
   const hasClear = isSet && onClear
   const hasReveal = isSet && showReveal && onReveal
   const hasDocs = Boolean(docsUrl?.trim())
@@ -52,7 +50,7 @@ export function EnvVarActionsMenu({
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent
         align={align}
-        aria-label={t('settings.credentials.actionsFor', { label })}
+        aria-label={`Actions for ${label}`}
         className="w-44"
         sideOffset={sideOffset}
       >
@@ -65,7 +63,7 @@ export function EnvVarActionsMenu({
             }}
           >
             <ExternalLink className="size-3.5" />
-            <span>{t('settings.credentials.docs')}</span>
+            <span>Docs</span>
           </DropdownMenuItem>
         )}
 
@@ -77,7 +75,7 @@ export function EnvVarActionsMenu({
             }}
           >
             {isRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-            <span>{isRevealed ? t('settings.credentials.hideValue') : t('settings.credentials.revealValue')}</span>
+            <span>{isRevealed ? 'Hide value' : 'Reveal value'}</span>
           </DropdownMenuItem>
         )}
 
@@ -88,7 +86,7 @@ export function EnvVarActionsMenu({
           }}
         >
           <Codicon name="edit" size="0.875rem" />
-          <span>{isSet ? t('settings.credentials.replace') : t('settings.credentials.set')}</span>
+          <span>{isSet ? 'Replace' : 'Set'}</span>
         </DropdownMenuItem>
 
         {hasClear && (
@@ -103,7 +101,7 @@ export function EnvVarActionsMenu({
               variant="destructive"
             >
               <Trash2 className="size-3.5" />
-              <span>{t('settings.credentials.clearValue')}</span>
+              <span>Clear</span>
             </DropdownMenuItem>
           </>
         )}
@@ -117,14 +115,12 @@ interface EnvVarActionsTriggerProps extends Omit<React.ComponentProps<typeof But
 }
 
 export function EnvVarActionsTrigger({ className, label, ...props }: EnvVarActionsTriggerProps) {
-  const { t } = useTranslation()
-
   return (
     <Button
-      aria-label={t('settings.credentials.actionsFor', { label })}
+      aria-label={`Actions for ${label}`}
       className={cn('text-muted-foreground hover:text-foreground', className)}
       size="icon-sm"
-      title={t('settings.credentials.actions')}
+      title="Credential actions"
       variant="ghost"
       {...props}
     >

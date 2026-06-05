@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import type { ModelOptionProvider, ModelOptionsResponse, ModelPricing } from '@/types/hermes'
 
@@ -43,7 +42,6 @@ export function ModelPickerDialog({
   onSelect,
   contentClassName
 }: ModelPickerDialogProps) {
-  const { t } = useTranslation()
   const [persistGlobal, setPersistGlobal] = useState(!sessionId)
   // Own the search term so we can filter manually. cmdk's built-in
   // shouldFilter reorders items by its fuzzy-match score (≈alphabetical with
@@ -99,9 +97,9 @@ export function ModelPickerDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className={cn('max-h-[85vh] max-w-2xl gap-0 overflow-hidden p-0', contentClassName)}>
         <DialogHeader className="border-b border-border px-4 py-3">
-          <DialogTitle>{t('modelPicker.title')}</DialogTitle>
+          <DialogTitle>Switch model</DialogTitle>
           <DialogDescription className="font-mono text-xs leading-relaxed">
-            当前: {optionsModel || currentModel || '(未知)'}
+            current: {optionsModel || currentModel || '(unknown)'}
             {optionsProvider || currentProvider ? ` · ${optionsProvider || currentProvider}` : ''}
           </DialogDescription>
         </DialogHeader>
@@ -110,11 +108,11 @@ export function ModelPickerDialog({
           <CommandInput
             autoFocus
             onValueChange={setSearch}
-            placeholder={t('modelPicker.search')}
+            placeholder="Filter providers and models..."
             value={search}
           />
           <CommandList className="max-h-96">
-            {!loading && !error && <CommandEmpty>{t('modelPicker.noResults')}</CommandEmpty>}
+            {!loading && !error && <CommandEmpty>No models found.</CommandEmpty>}
             <ModelResults
               currentModel={optionsModel || currentModel}
               currentProvider={optionsProvider || currentProvider}
@@ -134,15 +132,15 @@ export function ModelPickerDialog({
               disabled={!sessionId}
               onCheckedChange={checked => setPersistGlobal(checked === true)}
             />
-            {sessionId ? t('modelPicker.saveGlobalSession') : t('modelPicker.saveGlobal')}
+            {sessionId ? 'Persist globally (otherwise this session only)' : 'Persist globally'}
           </label>
 
           <div className="flex items-center gap-2">
             <Button onClick={addProvider} variant="ghost">
-              {t('modelPicker.addProvider')}
+              Add provider
             </Button>
             <Button onClick={() => onOpenChange(false)} variant="outline">
-              {t('modelPicker.cancel')}
+              Cancel
             </Button>
           </div>
         </DialogFooter>
@@ -168,8 +166,6 @@ function ModelResults({
   onSelectModel: (provider: ModelOptionProvider, model: string) => void
   search: string
 }) {
-  const { t } = useTranslation()
-
   if (loading) {
     return <LoadingResults />
   }
@@ -177,7 +173,7 @@ function ModelResults({
   if (error) {
     return (
       <div className="px-3 py-3">
-        <InlineNotice kind="error" title={t('modelPicker.errorLoadingModels')}>
+        <InlineNotice kind="error" title="Could not load models">
           {error}
         </InlineNotice>
       </div>
@@ -185,7 +181,7 @@ function ModelResults({
   }
 
   if (providers.length === 0) {
-    return <div className="px-4 py-6 text-sm text-muted-foreground">{t('modelPicker.noProviders')}</div>
+    return <div className="px-4 py-6 text-sm text-muted-foreground">No authenticated providers.</div>
   }
 
   const q = search.trim().toLowerCase()
@@ -252,7 +248,7 @@ function ModelResults({
             })}
             {unavailable.size > 0 && (
               <div className="px-6 pb-2 pt-1 text-[0.62rem] leading-relaxed text-muted-foreground">
-                {t('modelPicker.proModelsRequireSubscription')}
+                Pro models need a paid Nous subscription.
               </div>
             )}
           </CommandGroup>

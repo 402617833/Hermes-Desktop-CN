@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
 import { type NodeApi, type NodeRendererProps, Tree, type TreeApi } from 'react-arborist'
-import { useTranslation } from 'react-i18next'
 
 import { PageLoader } from '@/components/page-loader'
 import { Codicon } from '@/components/ui/codicon'
@@ -123,9 +122,7 @@ export function ProjectTree({
 }
 
 function TreeSizingState() {
-  const { t } = useTranslation()
-
-  return <PageLoader aria-label={t('files.loadingFiles', { defaultValue: '正在加载文件' })} className="min-h-24 px-3" />
+  return <PageLoader aria-label="Loading files" className="min-h-24 px-3" />
 }
 
 function ProjectTreeRow({

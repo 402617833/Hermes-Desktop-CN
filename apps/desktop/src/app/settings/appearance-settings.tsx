@@ -1,18 +1,16 @@
 import { useStore } from '@nanostores/react'
-import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { SegmentedControl } from '@/components/ui/segmented-control'
-import { setLocale, SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n'
+import { type Locale, LOCALE_META, useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { Check } from '@/lib/icons'
+import { Check, Palette } from '@/lib/icons'
 import { cn } from '@/lib/utils'
+import { notifyError } from '@/store/notifications'
 import { $toolViewMode, setToolViewMode } from '@/store/tool-view'
 import { useTheme } from '@/themes/context'
 import { BUILTIN_THEMES } from '@/themes/presets'
 
 import { MODE_OPTIONS } from './constants'
-import { SettingsContent } from './primitives'
+import { Pill, SectionHeading, SettingsContent } from './primitives'
 
 function ThemePreview({ name }: { name: string }) {
   const t = BUILTIN_THEMES[name]
@@ -54,98 +52,193 @@ function ThemePreview({ name }: { name: string }) {
   )
 }
 
-function SectionHead({ title, description, control }: { title: string; description: string; control?: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-      <div className="min-w-0">
-        <div className="text-[length:var(--conversation-text-font-size)] font-medium">{title}</div>
-        <div className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-          {description}
-        </div>
-      </div>
-      {control && <div className="shrink-0">{control}</div>}
-    </div>
-  )
-}
-
 export function AppearanceSettings() {
-  const { t, i18n } = useTranslation()
+  const { t, isSavingLocale, locale, setLocale } = useI18n()
   const { themeName, mode, availableThemes, setTheme, setMode } = useTheme()
   const toolViewMode = useStore($toolViewMode)
-  const localeOptions = SUPPORTED_LOCALES.map(locale => ({ id: locale.code, label: locale.label }))
+  const activeTheme = availableThemes.find(theme => theme.name === themeName)
+  const a = t.settings.appearance
+  const locales = Object.keys(LOCALE_META) as Locale[]
+
+  const selectLocale = async (code: Locale) => {
+    if (code === locale || isSavingLocale) {
+      return
+    }
+
+    triggerHaptic('selection')
+
+    try {
+      await setLocale(code)
+      triggerHaptic('success')
+    } catch (error) {
+      notifyError(error, t.language.saveError)
+    }
+  }
 
   return (
     <SettingsContent>
-      <div className="grid gap-8">
-        <p className="max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-          {t('settings.appearance.description')}
-        </p>
+      <div className="space-y-5">
+        <div>
+          <SectionHeading icon={Palette} title={a.title} />
+          <p className="max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
+            {a.intro}
+          </p>
+        </div>
 
-        <section>
-          <SectionHead
-            control={
-              <SegmentedControl
-                onChange={id => {
-                  triggerHaptic('selection')
-                  setLocale(id as SupportedLocale)
-                }}
-                options={localeOptions}
-                value={i18n.language === 'zh' ? 'zh' : 'en'}
-              />
-            }
-            description={t('settings.appearance.languageDescription')}
-            title={t('settings.appearance.languageTitle')}
-          />
+        <section className="rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">{t.language.label}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{t.language.description}</div>
+              {isSavingLocale && <div className="mt-1 text-xs text-muted-foreground">{t.language.saving}</div>}
+            </div>
+            <Pill>{LOCALE_META[locale].name}</Pill>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {locales.map(code => {
+              const active = locale === code
+
+              return (
+                <button
+                  className={cn(
+                    'group rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-2.5 text-left transition hover:bg-(--chrome-action-hover)',
+                    active && 'border-(--ui-stroke-secondary) bg-(--ui-bg-tertiary)'
+                  )}
+                  disabled={isSavingLocale}
+                  key={code}
+                  onClick={() => void selectLocale(code)}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-[length:var(--conversation-text-font-size)] font-medium">
+                      {LOCALE_META[code].name}
+                    </div>
+                    {active && (
+                      <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-[length:var(--conversation-caption-font-size)] uppercase tracking-wide text-(--ui-text-tertiary)">
+                    {code}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </section>
 
-        <section>
-          <SectionHead
-            control={
-              <SegmentedControl
-                onChange={id => {
-                  triggerHaptic('crisp')
-                  setMode(id)
-                }}
-                options={MODE_OPTIONS}
-                value={mode}
-              />
-            }
-            description={t('settings.appearance.colorModeDescription')}
-            title={t('settings.appearance.colorModeTitle')}
-          />
+        <section className="rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">{a.colorMode}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{a.colorModeDesc}</div>
+            </div>
+            <Pill>{t.settings.modeOptions[mode].label}</Pill>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {MODE_OPTIONS.map(({ id, icon: Icon }) => {
+              const active = mode === id
+              const copy = t.settings.modeOptions[id]
+
+              return (
+                <button
+                  className={cn(
+                    'group rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-2.5 text-left transition hover:bg-(--chrome-action-hover)',
+                    active && 'border-(--ui-stroke-secondary) bg-(--ui-bg-tertiary)'
+                  )}
+                  key={id}
+                  onClick={() => {
+                    triggerHaptic('crisp')
+                    setMode(id)
+                  }}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground transition group-hover:bg-background">
+                      <Icon className="size-4" />
+                    </span>
+                    {active && (
+                      <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 text-[length:var(--conversation-text-font-size)] font-medium">{copy.label}</div>
+                  <div className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
+                    {copy.description}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </section>
 
-        <section>
-          <SectionHead
-            control={
-              <SegmentedControl
-                onChange={id => {
-                  triggerHaptic('selection')
-                  setToolViewMode(id)
-                }}
-                options={
-                  [
-                    { id: 'product', label: t('settings.appearance.product') },
-                    { id: 'technical', label: t('settings.appearance.technical') }
-                  ] as const
-                }
-                value={toolViewMode}
-              />
-            }
-            description={t('settings.appearance.toolDisplayDescription')}
-            title={t('settings.appearance.toolDisplayTitle')}
-          />
+        <section className="rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">{a.toolViewTitle}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{a.toolViewDesc}</div>
+            </div>
+            <Pill>{toolViewMode === 'technical' ? a.technical : a.product}</Pill>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                { id: 'product', label: a.product, description: a.productDesc },
+                { id: 'technical', label: a.technical, description: a.technicalDesc }
+              ] as const
+            ).map(option => {
+              const active = toolViewMode === option.id
+
+              return (
+                <button
+                  className={cn(
+                    'group rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-2.5 text-left transition hover:bg-(--chrome-action-hover)',
+                    active && 'border-(--ui-stroke-secondary) bg-(--ui-bg-tertiary)'
+                  )}
+                  key={option.id}
+                  onClick={() => {
+                    triggerHaptic('selection')
+                    setToolViewMode(option.id)
+                  }}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-[length:var(--conversation-text-font-size)] font-medium">{option.label}</div>
+                    {active && (
+                      <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
+                    {option.description}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </section>
 
-        <section className="grid gap-3">
-          <SectionHead description={t('settings.appearance.themeDescription')} title={t('settings.appearance.themeTitle')} />
-          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+        <section className="rounded-xl border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">{a.themeTitle}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{a.themeDesc}</div>
+            </div>
+            {activeTheme && <Pill>{activeTheme.label}</Pill>}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {availableThemes.map(theme => {
               const active = themeName === theme.name
 
               return (
                 <button
-                  className="group text-left"
+                  className={cn(
+                    'rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-2 text-left transition hover:bg-(--chrome-action-hover)',
+                    active && 'border-(--ui-stroke-secondary) bg-(--ui-bg-tertiary)'
+                  )}
                   key={theme.name}
                   onClick={() => {
                     triggerHaptic('crisp')
@@ -153,17 +246,8 @@ export function AppearanceSettings() {
                   }}
                   type="button"
                 >
-                  <div
-                    className={cn(
-                      'rounded-xl transition',
-                      active
-                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                        : 'opacity-90 group-hover:opacity-100'
-                    )}
-                  >
-                    <ThemePreview name={theme.name} />
-                  </div>
-                  <div className="mt-2.5 flex items-start justify-between gap-2 px-0.5">
+                  <ThemePreview name={theme.name} />
+                  <div className="mt-3 flex items-start justify-between gap-3 px-1">
                     <div className="min-w-0">
                       <div className="truncate text-[length:var(--conversation-text-font-size)] font-medium">
                         {theme.label}
@@ -172,7 +256,11 @@ export function AppearanceSettings() {
                         {theme.description}
                       </div>
                     </div>
-                    {active && <Check className="mt-0.5 size-4 shrink-0 text-primary" />}
+                    {active && (
+                      <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="size-3.5" />
+                      </span>
+                    )}
                   </div>
                 </button>
               )
