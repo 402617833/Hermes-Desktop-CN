@@ -1,0 +1,89 @@
+name: 翻译 / 汉化问题
+description: 报告未翻译、翻译错误、语义不自然或界面文本溢出。
+title: '[Translation]: '
+labels: ['translation']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供未翻译文本、所在页面位置和截图，方便快速定位。
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: 问题类型
+      options:
+        - 未翻译
+        - 翻译错误
+        - 翻译不自然
+        - 文本溢出 / UI 显示异常
+        - 中英文混排问题
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: untranslated-text
+    attributes:
+      label: 原文 / 当前显示文本
+      description: 请粘贴页面上看到的未翻译或有问题的文本。
+      placeholder: |
+        例如：Settings / Cancel / Failed to load configuration
+    validations:
+      required: true
+
+  - type: textarea
+    id: page-location
+    attributes:
+      label: 页面位置
+      description: 请说明该文本出现在哪个页面、弹窗、菜单或按钮附近。
+      placeholder: |
+        例如：设置 > 通用 > 启动选项；登录页右上角；更新失败弹窗……
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-translation
+    attributes:
+      label: 建议翻译
+      description: 如果你有更合适的中文翻译，请写在这里。
+
+  - type: input
+    id: asset-version
+    attributes:
+      label: 下载的资产文件和版本
+      placeholder: 'v0.15.1-cn.1 / Hermes-Chinese-win-unpacked.zip'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-source
+    attributes:
+      label: 安装来源
+      options:
+        - GitHub Release 便携版 / 压缩包
+        - GitHub Release 安装包
+        - cn-source 源码构建
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      placeholder: 'Windows 11 24H2 / Windows 10 22H2'
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图
+      description: 请上传包含问题文本的截图，最好标出具体位置。
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充信息
+      description: 如是否只在特定分辨率、缩放比例或主题下出现。

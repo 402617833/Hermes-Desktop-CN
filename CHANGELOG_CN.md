@@ -1,10 +1,29 @@
 # 中文更新日志
 
+## 0.15.1 CN 工程化优化
+
+### 新增
+
+- 新增 `cn-source` 分支作为完整中文源码、构建、同步官方和桌面更新源。
+- 新增 GitHub Actions：
+  - `Desktop CN Checks`：检查 i18n 显式翻译、TypeScript 和 lint。
+  - `Build CN Release`：从 `cn-source` 构建 Windows 便携版并创建 draft Release。
+  - `Sync Upstream`：同步官方上游到 `sync/upstream-*` 分支并创建 PR 到 `cn-source`。
+- 新增中文 Issue 模板：Bug 反馈、翻译问题、安装求助、功能建议。
+- 新增 Desktop i18n 检查脚本，防止新增英文 key 后被 `...en` fallback 静默漏翻。
+
+### 调整
+
+- `main` 分支定位为干净展示页、下载说明、Issue 模板和可见 Actions 入口。
+- Desktop 更新入口改为打开本仓库 Releases，避免误拉官方更新覆盖中文版本。
+- About / Release Notes 指向本仓库 Releases。
+- 安装脚本和默认更新分支指向 `402617833/Hermes-Desktop-CN` 的 `cn-source`。
+
 ## 0.15.1 CN
 
 基于 Hermes Desktop `0.15.1` 的中文汉化发行版本。
 
-### 新增
+### 初始汉化新增
 
 - 新增中文 i18n 资源：`source/apps/desktop/src/i18n/locales/zh.ts`
 - 新增英文 i18n 资源：`source/apps/desktop/src/i18n/locales/en.ts`
@@ -38,4 +57,4 @@
 
 - Hermes、Nous、OpenRouter、Claude、Grok 等品牌名称默认保留英文
 - 发行包建议使用 `Hermes-Chinese-win-unpacked.zip` 命名
-- 若需要自行构建，请先进入 `source/` 目录再执行构建命令
+- 若需要自行构建，请先进入 `source/` 目录或切换到 `cn-source` 分支再执行构建命令

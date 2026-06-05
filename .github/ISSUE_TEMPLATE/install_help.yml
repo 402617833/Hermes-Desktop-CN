@@ -1,0 +1,90 @@
+name: 安装 / 启动求助
+description: 安装、更新、启动或源码构建 Hermes Desktop CN 时遇到问题。
+title: '[Install]: '
+labels: ['install', 'help wanted']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请填写安装来源、下载资产、Windows 版本和完整报错。若是源码构建，请提供构建命令和输出。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 遇到的问题
+      description: 请说明你正在做什么，卡在了哪一步。
+      placeholder: |
+        例如：压缩包无法运行；启动白屏；源码构建失败；Release 版本启动时报错……
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-source
+    attributes:
+      label: 安装来源
+      options:
+        - GitHub Release 便携版 / 压缩包
+        - GitHub Release 安装包
+        - cn-source 源码构建
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: asset-version
+    attributes:
+      label: 下载的资产文件和版本
+      description: Release 用户填版本和文件名；源码构建用户填分支和 commit。
+      placeholder: 'v0.15.1-cn.1 / Hermes-Chinese-win-unpacked.zip / cn-source@abcdef1'
+    validations:
+      required: true
+
+  - type: input
+    id: install-method
+    attributes:
+      label: 安装方式
+      placeholder: '解压运行 / 双击安装包 / npm install 后源码运行 / 其他'
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      placeholder: 'Windows 11 24H2 / Windows 10 22H2'
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 已执行的步骤
+      placeholder: |
+        1. 下载……
+        2. 解压/安装……
+        3. 运行……
+        4. 出现……
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: 完整报错 / 构建输出
+      description: 请粘贴完整错误信息，不要只截取最后一行。
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图
+      description: 请上传安装失败、启动失败或报错窗口截图。
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 已尝试的解决方法
+      placeholder: |
+        例如：重新下载压缩包；以管理员身份运行；删除配置后重试；重新安装依赖……

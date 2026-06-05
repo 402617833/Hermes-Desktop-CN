@@ -1,0 +1,89 @@
+name: 功能建议
+description: 提出 Hermes Desktop CN 的新功能、体验改进或汉化增强建议。
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢建议。请说明你的使用场景、期望行为，以及当前版本信息。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用场景 / 当前问题
+      description: 你遇到了什么不便？为什么需要这个功能？
+      placeholder: |
+        例如：希望安装器支持……；希望汉化覆盖……；希望更新体验……
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的解决方案
+      description: 请尽量具体描述你希望它如何工作。
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: 建议类型
+      options:
+        - 安装 / 更新体验
+        - 界面 / 交互体验
+        - 汉化 / 本地化
+        - Windows 兼容性
+        - 性能 / 稳定性
+        - 文档 / 使用说明
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: asset-version
+    attributes:
+      label: 当前使用的资产文件和版本
+      placeholder: 'v0.15.1-cn.1 / Hermes-Chinese-win-unpacked.zip'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-source
+    attributes:
+      label: 安装来源
+      options:
+        - GitHub Release 便携版 / 压缩包
+        - GitHub Release 安装包
+        - cn-source 源码构建
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      placeholder: 'Windows 11 24H2 / Windows 10 22H2'
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图 / 参考示例
+      description: 如果建议和界面有关，请上传截图或示意图。
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案
+      description: 你是否考虑过其他实现方式或临时解决方法？
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 贡献意愿
+      options:
+        - label: 我愿意提交 PR 实现或协助测试这个功能

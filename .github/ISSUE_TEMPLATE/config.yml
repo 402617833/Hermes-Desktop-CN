@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用说明 / README
+    url: https://github.com/402617833/Hermes-Desktop-CN/blob/main/README.md
+    about: 提交 Issue 前，请先阅读安装、更新和常见问题说明。
+  - name: 发布版本 / Releases
+    url: https://github.com/402617833/Hermes-Desktop-CN/releases
+    about: 请确认你下载的是最新 Release，并在 Issue 中填写具体资产文件名和版本号。

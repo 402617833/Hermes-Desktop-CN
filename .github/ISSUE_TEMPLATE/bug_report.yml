@@ -1,0 +1,96 @@
+name: Bug 反馈
+description: 报告 Hermes Desktop CN 崩溃、异常行为或功能错误。
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈问题。请尽量完整填写以下信息，尤其是下载的资产文件、安装方式、Windows 版本和截图。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 简要说明发生了什么，以及你期望发生什么。
+      placeholder: |
+        例如：启动后白屏；点击某按钮后无响应；某页面显示异常……
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请写出能稳定复现问题的步骤。
+      placeholder: |
+        1. 打开 Hermes Desktop CN
+        2. 进入某个页面
+        3. 点击某个按钮
+        4. 出现异常
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+      description: 实际看到的现象、报错或日志。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+      description: 正常情况下应该是什么表现。
+    validations:
+      required: true
+
+  - type: input
+    id: asset-version
+    attributes:
+      label: 下载的资产文件和版本
+      description: 请填写 Release 版本号和具体下载文件名。
+      placeholder: 'v0.15.1-cn.1 / Hermes-Chinese-win-unpacked.zip'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-source
+    attributes:
+      label: 安装来源
+      options:
+        - GitHub Release 便携版 / 压缩包
+        - GitHub Release 安装包
+        - cn-source 源码构建
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      placeholder: 'Windows 11 24H2 / Windows 10 22H2'
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图或录屏
+      description: 请拖拽上传截图、录屏或报错窗口图片。
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 控制台输出
+      description: 如有日志、崩溃信息或开发者工具报错，请粘贴完整内容。
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充信息
+      description: 任何可能有帮助的信息，例如是否升级后出现、是否重装过、是否杀毒软件拦截等。
