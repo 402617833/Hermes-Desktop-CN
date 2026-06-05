@@ -37,24 +37,35 @@ jobs:
           git fetch upstream main
 
       - name: Create sync branch and merge upstream/main
+        id: sync
         env:
           BRANCH_NAME: sync/upstream-${{ github.run_id }}
         run: |
           set -euo pipefail
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "cn-source already contains upstream/main; nothing to sync."
+            echo "skip_pr=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           git checkout -b "$BRANCH_NAME"
-          git merge --no-edit --allow-unrelated-histories upstream/main
-          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+          git merge --no-edit upstream/main
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          echo "skip_pr=false" >> "$GITHUB_OUTPUT"
 
       - name: Push sync branch
-        run: git push origin "$BRANCH_NAME"
+        if: steps.sync.outputs.skip_pr != 'true'
+        run: git push origin "${{ steps.sync.outputs.branch_name }}"
 
       - name: Open pull request to cn-source
+        if: steps.sync.outputs.skip_pr != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create \
             --base cn-source \
-            --head "$BRANCH_NAME" \
+            --head "${{ steps.sync.outputs.branch_name }}" \
             --title 'Sync upstream main into cn-source' \
             --body "$(cat <<'EOF'
           ## Summary
