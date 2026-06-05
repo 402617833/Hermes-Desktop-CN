@@ -1,7 +1,9 @@
 import { useStore } from '@nanostores/react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { SegmentedControl } from '@/components/ui/segmented-control'
+import { setLocale, SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { Check } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -67,16 +69,34 @@ function SectionHead({ title, description, control }: { title: string; descripti
 }
 
 export function AppearanceSettings() {
+  const { t, i18n } = useTranslation()
   const { themeName, mode, availableThemes, setTheme, setMode } = useTheme()
   const toolViewMode = useStore($toolViewMode)
+  const localeOptions = SUPPORTED_LOCALES.map(locale => ({ id: locale.code, label: locale.label }))
 
   return (
     <SettingsContent>
       <div className="grid gap-8">
         <p className="max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-          These are desktop-only display preferences. Mode controls brightness; theme controls the accent palette and
-          chat surface styling.
+          {t('settings.appearance.description')}
         </p>
+
+        <section>
+          <SectionHead
+            control={
+              <SegmentedControl
+                onChange={id => {
+                  triggerHaptic('selection')
+                  setLocale(id as SupportedLocale)
+                }}
+                options={localeOptions}
+                value={i18n.language === 'zh' ? 'zh' : 'en'}
+              />
+            }
+            description={t('settings.appearance.languageDescription')}
+            title={t('settings.appearance.languageTitle')}
+          />
+        </section>
 
         <section>
           <SectionHead
@@ -90,8 +110,8 @@ export function AppearanceSettings() {
                 value={mode}
               />
             }
-            description="Pick a fixed mode or let Hermes follow your system setting."
-            title="Color Mode"
+            description={t('settings.appearance.colorModeDescription')}
+            title={t('settings.appearance.colorModeTitle')}
           />
         </section>
 
@@ -105,20 +125,20 @@ export function AppearanceSettings() {
                 }}
                 options={
                   [
-                    { id: 'product', label: 'Product' },
-                    { id: 'technical', label: 'Technical' }
+                    { id: 'product', label: t('settings.appearance.product') },
+                    { id: 'technical', label: t('settings.appearance.technical') }
                   ] as const
                 }
                 value={toolViewMode}
               />
             }
-            description="Product hides raw tool payloads; Technical shows full input/output."
-            title="Tool Call Display"
+            description={t('settings.appearance.toolDisplayDescription')}
+            title={t('settings.appearance.toolDisplayTitle')}
           />
         </section>
 
         <section className="grid gap-3">
-          <SectionHead description="Desktop palettes only. The selected mode is applied on top." title="Theme" />
+          <SectionHead description={t('settings.appearance.themeDescription')} title={t('settings.appearance.themeTitle')} />
           <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
             {availableThemes.map(theme => {
               const active = themeName === theme.name

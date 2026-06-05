@@ -1,5 +1,5 @@
-import { useStore } from '@nanostores/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +7,6 @@ import type { DesktopAuthProvider, DesktopConnectionProbeResult } from '@/global
 import { AlertCircle, Check, FileText, Globe, Loader2, LogIn, Monitor } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
-import { $profiles, refreshActiveProfile } from '@/store/profile'
 
 import { CONTROL_TEXT } from './constants'
 import { EmptyState, ListRow, LoadingState, Pill, SettingsContent } from './primitives'
@@ -76,24 +75,8 @@ function ModeCard({
   )
 }
 
-function ScopeChip({ active, label, onSelect }: { active: boolean; label: string; onSelect: () => void }) {
-  return (
-    <button
-      className={cn(
-        'rounded-full border px-3 py-1 text-[length:var(--conversation-caption-font-size)] transition',
-        active
-          ? 'border-(--ui-stroke-secondary) bg-(--ui-bg-tertiary) text-(--ui-text-primary)'
-          : 'border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) text-(--ui-text-tertiary) hover:bg-(--chrome-action-hover)'
-      )}
-      onClick={onSelect}
-      type="button"
-    >
-      {label}
-    </button>
-  )
-}
-
 export function GatewaySettings() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -101,16 +84,6 @@ export function GatewaySettings() {
   const [state, setState] = useState<GatewaySettingsState>(EMPTY_STATE)
   const [remoteToken, setRemoteToken] = useState('')
   const [lastTest, setLastTest] = useState<null | string>(null)
-
-  // Connection scope: null = the global/default connection (the original
-  // behavior); a profile name = that profile's per-profile remote override, so
-  // each profile can point at its own backend.
-  const [scope, setScope] = useState<null | string>(null)
-  const profiles = useStore($profiles)
-
-  useEffect(() => {
-    void refreshActiveProfile()
-  }, [])
 
   // Auth-mode probe: as the user types a remote URL we ask the gateway (via
   // its public /api/status) whether it gates with OAuth or a static session
@@ -129,14 +102,8 @@ export function GatewaySettings() {
       return () => void (cancelled = true)
     }
 
-    setLoading(true)
-    // Clear scope-local entry state so a token from one scope can't leak into
-    // the next when switching profiles.
-    setRemoteToken('')
-    setLastTest(null)
-
     desktop
-      .getConnectionConfig(scope)
+      .getConnectionConfig()
       .then(config => {
         if (cancelled) {
           return
@@ -144,7 +111,7 @@ export function GatewaySettings() {
 
         setState(config)
       })
-      .catch(err => notifyError(err, 'Gateway settings failed to load'))
+      .catch(err => notifyError(err, t('settings.gateway.loadFailed')))
       .finally(() => {
         if (!cancelled) {
           setLoading(false)
@@ -152,7 +119,7 @@ export function GatewaySettings() {
       })
 
     return () => void (cancelled = true)
-  }, [scope])
+  }, [])
 
   // Debounced probe of the entered remote URL. Only runs in remote mode with a
   // syntactically plausible URL. The probe result drives whether we render the
@@ -242,7 +209,7 @@ export function GatewaySettings() {
       return providers.map(p => p.displayName || p.name).join(' / ')
     }
 
-    return 'your identity provider'
+    return t('settings.gateway.identityProvider')
   }, [probe])
 
   // A username/password gateway authenticates through a credential form on the
@@ -257,10 +224,6 @@ export function GatewaySettings() {
 
     return providers.length > 0 && providers.every(p => p.supportsPassword)
   }, [probe])
-
-  // The 'default' profile uses the global ("All profiles") connection, so the
-  // per-profile scopes are the named, non-default profiles.
-  const namedProfiles = useMemo(() => profiles.filter(profile => profile.name !== 'default'), [profiles])
 
   const oauthConnected = state.remoteOauthConnected
 
@@ -278,7 +241,6 @@ export function GatewaySettings() {
 
   const payload = () => ({
     mode: state.mode,
-    profile: scope ?? undefined,
     remoteAuthMode: authMode,
     remoteToken: authMode === 'token' ? remoteToken.trim() || undefined : undefined,
     remoteUrl: trimmedUrl
@@ -288,11 +250,11 @@ export function GatewaySettings() {
     if (state.mode === 'remote' && !canUseRemote) {
       notify({
         kind: 'warning',
-        title: 'Remote gateway incomplete',
+        title: t('settings.gateway.remoteIncomplete'),
         message:
           authMode === 'oauth'
-            ? 'Enter a remote URL and sign in before switching to remote.'
-            : 'Enter a remote URL and session token before switching to remote.'
+            ? t('settings.gateway.enterUrlAndSignInSwitch')
+            : t('settings.gateway.enterUrlAndTokenSwitch')
       })
 
       return
@@ -309,11 +271,11 @@ export function GatewaySettings() {
       setRemoteToken('')
       notify({
         kind: 'success',
-        title: apply ? 'Gateway connection restarting' : 'Gateway settings saved',
-        message: apply ? 'Hermes Desktop will reconnect using the saved settings.' : 'Saved for the next restart.'
+        title: apply ? t('settings.gateway.restarting') : t('settings.gateway.saved'),
+        message: apply ? t('settings.gateway.restartingMessage') : t('settings.gateway.savedForRestart')
       })
     } catch (err) {
-      notifyError(err, apply ? 'Could not apply gateway settings' : 'Could not save gateway settings')
+      notifyError(err, apply ? t('settings.gateway.applyFailed') : t('settings.gateway.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -324,7 +286,7 @@ export function GatewaySettings() {
   // refresh the connection status from the saved config once it completes.
   const signIn = async () => {
     if (!trimmedUrl) {
-      notify({ kind: 'warning', title: 'Remote gateway incomplete', message: 'Enter a remote URL first.' })
+      notify({ kind: 'warning', title: t('settings.gateway.remoteIncomplete'), message: t('settings.gateway.enterUrlFirst') })
 
       return
     }
@@ -336,7 +298,6 @@ export function GatewaySettings() {
       // oauth mode is persisted, without yet flipping the live connection.
       const saved = await window.hermesDesktop.saveConnectionConfig({
         mode: state.mode,
-        profile: scope ?? undefined,
         remoteAuthMode: 'oauth',
         remoteUrl: trimmedUrl
       })
@@ -346,18 +307,18 @@ export function GatewaySettings() {
       const result = await window.hermesDesktop.oauthLoginConnectionConfig(trimmedUrl)
 
       if (result.connected) {
-        const refreshed = await window.hermesDesktop.getConnectionConfig(scope)
+        const refreshed = await window.hermesDesktop.getConnectionConfig()
         setState(refreshed)
-        notify({ kind: 'success', title: 'Signed in', message: `Connected to ${providerLabel}.` })
+        notify({ kind: 'success', title: t('settings.gateway.signedIn'), message: t('settings.gateway.connectedToProvider', { provider: providerLabel }) })
       } else {
         notify({
           kind: 'warning',
-          title: 'Sign-in incomplete',
-          message: 'The login window closed before authentication finished.'
+          title: t('settings.gateway.signInIncomplete'),
+          message: t('settings.gateway.signInIncompleteMessage')
         })
       }
     } catch (err) {
-      notifyError(err, 'Sign-in failed')
+      notifyError(err, t('settings.gateway.signInFailed'))
     } finally {
       setSigningIn(false)
     }
@@ -368,11 +329,11 @@ export function GatewaySettings() {
 
     try {
       await window.hermesDesktop.oauthLogoutConnectionConfig(trimmedUrl || undefined)
-      const refreshed = await window.hermesDesktop.getConnectionConfig(scope)
+      const refreshed = await window.hermesDesktop.getConnectionConfig()
       setState(refreshed)
-      notify({ kind: 'success', title: 'Signed out', message: 'Cleared the remote gateway session.' })
+      notify({ kind: 'success', title: t('settings.gateway.signedOut'), message: t('settings.gateway.signedOutMessage') })
     } catch (err) {
-      notifyError(err, 'Sign-out failed')
+      notifyError(err, t('settings.gateway.signOutFailed'))
     } finally {
       setSigningIn(false)
     }
@@ -382,11 +343,11 @@ export function GatewaySettings() {
     if (!canUseRemote) {
       notify({
         kind: 'warning',
-        title: 'Remote gateway incomplete',
+        title: t('settings.gateway.remoteIncomplete'),
         message:
           authMode === 'oauth'
-            ? 'Enter a remote URL and sign in before testing.'
-            : 'Enter a remote URL and session token before testing.'
+            ? t('settings.gateway.enterUrlAndSignInTest')
+            : t('settings.gateway.enterUrlAndTokenTest')
       })
 
       return
@@ -398,31 +359,30 @@ export function GatewaySettings() {
     try {
       const result = await window.hermesDesktop.testConnectionConfig({
         mode: 'remote',
-        profile: scope ?? undefined,
         remoteAuthMode: authMode,
         remoteToken: authMode === 'token' ? remoteToken.trim() || undefined : undefined,
         remoteUrl: trimmedUrl
       })
 
-      const message = `Connected to ${result.baseUrl}${result.version ? ` · Hermes ${result.version}` : ''}`
+      const message = t('settings.gateway.connectedToUrl', { url: result.baseUrl, version: result.version ? ` · Hermes ${result.version}` : '' })
       setLastTest(message)
-      notify({ kind: 'success', title: 'Remote gateway reachable', message })
+      notify({ kind: 'success', title: t('settings.gateway.remoteReachable'), message })
     } catch (err) {
-      notifyError(err, 'Remote gateway test failed')
+      notifyError(err, t('settings.gateway.testFailed'))
     } finally {
       setTesting(false)
     }
   }
 
   if (loading) {
-    return <LoadingState label="Loading gateway settings..." />
+    return <LoadingState label={t('settings.gateway.loading')} />
   }
 
   if (!window.hermesDesktop?.getConnectionConfig) {
     return (
       <EmptyState
-        description="The desktop IPC bridge does not expose gateway settings."
-        title="Gateway settings unavailable"
+        description={t('settings.gateway.unavailableDescription')}
+        title={t('settings.gateway.unavailableTitle')}
       />
     )
   }
@@ -432,48 +392,22 @@ export function GatewaySettings() {
       <div className="mb-5">
         <div className="flex items-center gap-2 text-[length:var(--conversation-text-font-size)] font-medium">
           <Globe className="size-4 text-muted-foreground" />
-          Gateway Connection
-          {state.envOverride ? <Pill tone="primary">env override</Pill> : null}
+          {t('settings.gateway.title')}
+          {state.envOverride ? <Pill tone="primary">{t('settings.gateway.envOverride')}</Pill> : null}
         </div>
         <p className="mt-2 max-w-2xl text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-          Hermes Desktop starts its own local gateway by default. Use a remote gateway when you want this app to control
-          an already-running Hermes backend on another machine or behind a trusted proxy. Pick a profile below to give it
-          its own remote host.
+          {t('settings.gateway.description')}
         </p>
       </div>
-
-      {namedProfiles.length > 0 ? (
-        <div className="mb-5 grid gap-2">
-          <div className="text-[length:var(--conversation-caption-font-size)] font-medium text-(--ui-text-secondary)">
-            Applies to
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            <ScopeChip active={scope === null} label="All profiles" onSelect={() => setScope(null)} />
-            {namedProfiles.map(profile => (
-              <ScopeChip
-                active={scope === profile.name}
-                key={profile.name}
-                label={profile.name}
-                onSelect={() => setScope(profile.name)}
-              />
-            ))}
-          </div>
-          <p className="text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-            {scope === null
-              ? 'Default connection for every profile that has no override of its own.'
-              : `Connection used only when “${scope}” is the active profile. Set it to Local to inherit the default.`}
-          </p>
-        </div>
-      ) : null}
 
       {state.envOverride ? (
         <div className="mb-5 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-[length:var(--conversation-caption-font-size)] text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <div>
-            <div className="font-medium">Environment variables are controlling this desktop session.</div>
+            <div className="font-medium">{t('settings.gateway.envControlledTitle')}</div>
             <div className="mt-1 leading-5">
-              Unset <code>HERMES_DESKTOP_REMOTE_URL</code> and <code>HERMES_DESKTOP_REMOTE_TOKEN</code> to use the saved
-              setting below.
+              {t('settings.gateway.envControlledPrefix')} <code>HERMES_DESKTOP_REMOTE_URL</code> {t('common.and')}{' '}
+              <code>HERMES_DESKTOP_REMOTE_TOKEN</code> {t('settings.gateway.envControlledSuffix')}
             </div>
           </div>
         </div>
@@ -482,19 +416,19 @@ export function GatewaySettings() {
       <div className="grid gap-3 sm:grid-cols-2">
         <ModeCard
           active={state.mode === 'local'}
-          description="Start a private Hermes backend on localhost. This is the default and works offline."
+          description={t('settings.gateway.localDescription')}
           disabled={state.envOverride}
           icon={Monitor}
           onSelect={() => setState(current => ({ ...current, mode: 'local' }))}
-          title="Local gateway"
+          title={t('settings.gateway.localTitle')}
         />
         <ModeCard
           active={state.mode === 'remote'}
-          description="Connect this desktop shell to a remote Hermes backend. Hosted gateways use OAuth or a username and password; self-hosted ones may use a session token."
+          description={t('settings.gateway.remoteDescription')}
           disabled={state.envOverride}
           icon={Globe}
           onSelect={() => setState(current => ({ ...current, mode: 'remote' }))}
-          title="Remote gateway"
+          title={t('settings.gateway.remoteTitle')}
         />
       </div>
 
@@ -509,21 +443,21 @@ export function GatewaySettings() {
               value={state.remoteUrl}
             />
           }
-          description="Base URL for the remote dashboard backend. Path prefixes are supported, for example /hermes."
-          title="Remote URL"
+          description={t('settings.gateway.remoteUrlDescription')}
+          title={t('settings.gateway.remoteUrlTitle')}
         />
 
         {state.mode === 'remote' && probeStatus === 'probing' ? (
           <div className="flex items-center gap-2 py-3 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
             <Loader2 className="size-4 animate-spin" />
-            Checking how this gateway authenticates…
+            {t('settings.gateway.checkingAuth')}
           </div>
         ) : null}
 
         {state.mode === 'remote' && probeStatus === 'error' ? (
           <div className="flex items-start gap-2 py-3 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
-            Could not reach this gateway yet. Check the URL — the auth method will appear once it responds.
+            {t('settings.gateway.authProbeFailed')}
           </div>
         ) : null}
 
@@ -534,30 +468,30 @@ export function GatewaySettings() {
               oauthConnected ? (
                 <div className="flex items-center gap-2">
                   <Pill tone="primary">
-                    <Check className="size-3" /> Signed in
+                    <Check className="size-3" /> {t('settings.gateway.signedIn')}
                   </Pill>
                   <Button disabled={signingIn || state.envOverride} onClick={() => void signOut()} variant="outline">
                     {signingIn ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Sign out
+                    {t('settings.gateway.signOut')}
                   </Button>
                 </div>
               ) : (
                 <Button disabled={signingIn || state.envOverride || !trimmedUrl} onClick={() => void signIn()}>
                   {signingIn ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
-                  {isPasswordProvider ? 'Sign in' : `Sign in with ${providerLabel}`}
+                  {isPasswordProvider ? t('settings.gateway.signIn') : t('settings.gateway.signInWithProvider', { provider: providerLabel })}
                 </Button>
               )
             }
             description={
               oauthConnected
                 ? isPasswordProvider
-                  ? 'This gateway uses a username and password. You are signed in; the session refreshes automatically.'
-                  : 'This gateway uses OAuth. You are signed in; the session refreshes automatically.'
+                  ? t('settings.gateway.passwordSignedInDescription')
+                  : t('settings.gateway.oauthSignedInDescription')
                 : isPasswordProvider
-                  ? 'This gateway uses a username and password. Sign in to authorize this desktop app.'
-                  : `This gateway uses OAuth. Sign in with ${providerLabel} to authorize this desktop app.`
+                  ? t('settings.gateway.passwordSignInDescription')
+                  : t('settings.gateway.oauthSignInDescription', { provider: providerLabel })
             }
-            title="Authentication"
+            title={t('settings.gateway.authenticationTitle')}
           />
         ) : null}
 
@@ -571,14 +505,16 @@ export function GatewaySettings() {
                 disabled={state.envOverride}
                 onChange={event => setRemoteToken(event.target.value)}
                 placeholder={
-                  state.remoteTokenSet ? `Existing token ${state.remoteTokenPreview ?? 'saved'}` : 'Paste session token'
+                  state.remoteTokenSet
+                    ? t('settings.gateway.existingToken', { token: state.remoteTokenPreview ?? t('common.saved') })
+                    : t('settings.gateway.pasteSessionToken')
                 }
                 type="password"
                 value={remoteToken}
               />
             }
-            description="The dashboard session token used for REST and WebSocket access. Leave blank to keep the saved token."
-            title="Session token"
+            description={t('settings.gateway.sessionTokenDescription')}
+            title={t('settings.gateway.sessionTokenTitle')}
           />
         ) : null}
       </div>
@@ -594,14 +530,14 @@ export function GatewaySettings() {
           variant="text"
         >
           {testing ? <Loader2 className="size-4 animate-spin" /> : null}
-          Test remote
+          {t('settings.gateway.testRemote')}
         </Button>
         <Button disabled={state.envOverride || saving} onClick={() => void save(false)} size="sm" variant="textStrong">
-          Save for next restart
+          {t('settings.gateway.saveForRestart')}
         </Button>
         <Button disabled={state.envOverride || saving} onClick={() => void save(true)} size="sm">
           {saving ? <Loader2 className="size-4 animate-spin" /> : null}
-          Save and reconnect
+          {t('settings.gateway.saveAndReconnect')}
         </Button>
       </div>
 
@@ -610,11 +546,11 @@ export function GatewaySettings() {
           action={
             <Button onClick={() => void window.hermesDesktop?.revealLogs()} size="sm" variant="textStrong">
               <FileText className="size-4" />
-              Open logs
+              {t('settings.gateway.openLogs')}
             </Button>
           }
-          description="Reveal desktop.log in your file manager — useful when the gateway fails to start."
-          title="Diagnostics"
+          description={t('settings.gateway.diagnosticsDescription')}
+          title={t('settings.gateway.diagnosticsTitle')}
         />
       </div>
     </SettingsContent>

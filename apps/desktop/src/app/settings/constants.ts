@@ -27,6 +27,7 @@ interface ProviderPrefix {
   name: string
   /** Optional one-line tagline shown beneath the group name. */
   description?: string
+  descriptionKey?: string
   /** Optional canonical signup/console URL surfaced from the card header. */
   docsUrl?: string
   /** Lower numbers float to the top of the providers list. */
@@ -40,35 +41,35 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'NOUS_',
     name: 'Nous Portal',
-    description: 'Hosted Hermes & Nous-trained models',
+    descriptionKey: 'settings.providerDesc.nousPortal',
     docsUrl: 'https://portal.nousresearch.com',
     priority: 0
   },
   {
     prefix: 'OPENROUTER_',
     name: 'OpenRouter',
-    description: 'Aggregator for hundreds of frontier models',
+    descriptionKey: 'settings.providerDesc.openRouter',
     docsUrl: 'https://openrouter.ai/keys',
     priority: 1
   },
   {
     prefix: 'ANTHROPIC_',
     name: 'Anthropic',
-    description: 'Claude API access (Sonnet, Opus, Haiku)',
+    descriptionKey: 'settings.providerDesc.anthropic',
     docsUrl: 'https://console.anthropic.com/settings/keys',
     priority: 2
   },
   {
     prefix: 'XAI_',
     name: 'xAI',
-    description: 'Grok models (use OAuth for SuperGrok / Premium+)',
+    descriptionKey: 'settings.providerDesc.xai',
     docsUrl: 'https://console.x.ai/',
     priority: 3
   },
   {
     prefix: 'GOOGLE_',
     name: 'Gemini',
-    description: 'Google AI Studio (Gemini 1.5 / 2.0 / 2.5)',
+    descriptionKey: 'settings.providerDesc.gemini',
     docsUrl: 'https://aistudio.google.com/app/apikey',
     priority: 4
   },
@@ -77,14 +78,14 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'DEEPSEEK_',
     name: 'DeepSeek',
-    description: 'Direct DeepSeek API (V3.x, R1)',
+    descriptionKey: 'settings.providerDesc.deepSeek',
     docsUrl: 'https://platform.deepseek.com/api_keys',
     priority: 5
   },
   {
     prefix: 'DASHSCOPE_',
     name: 'DashScope (Qwen)',
-    description: 'Alibaba Cloud DashScope — Qwen and multi-vendor models',
+    descriptionKey: 'settings.providerDesc.dashScope',
     docsUrl: 'https://modelstudio.console.alibabacloud.com/',
     priority: 6
   },
@@ -92,7 +93,7 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'GLM_',
     name: 'GLM / Z.AI',
-    description: 'Zhipu GLM-4.6 and Z.AI hosted endpoints',
+    descriptionKey: 'settings.providerDesc.glm',
     docsUrl: 'https://z.ai/',
     priority: 7
   },
@@ -101,91 +102,91 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'KIMI_',
     name: 'Kimi / Moonshot',
-    description: 'Moonshot Kimi K2 / coding endpoints',
+    descriptionKey: 'settings.providerDesc.kimi',
     docsUrl: 'https://platform.moonshot.cn/',
     priority: 8
   },
   {
     prefix: 'KIMI_CN_',
     name: 'Kimi (China)',
-    description: 'Moonshot China endpoint',
+    descriptionKey: 'settings.providerDesc.kimiChina',
     docsUrl: 'https://platform.moonshot.cn/',
     priority: 9
   },
   {
     prefix: 'MINIMAX_',
     name: 'MiniMax',
-    description: 'MiniMax-M2 and Hailuo international endpoints',
+    descriptionKey: 'settings.providerDesc.miniMax',
     docsUrl: 'https://www.minimax.io/',
     priority: 10
   },
   {
     prefix: 'MINIMAX_CN_',
     name: 'MiniMax (China)',
-    description: 'MiniMax mainland China endpoint',
+    descriptionKey: 'settings.providerDesc.miniMaxChina',
     docsUrl: 'https://www.minimaxi.com/',
     priority: 11
   },
   {
     prefix: 'HF_',
     name: 'Hugging Face',
-    description: 'Inference Providers — 20+ open models via router.huggingface.co',
+    descriptionKey: 'settings.providerDesc.huggingFace',
     docsUrl: 'https://huggingface.co/settings/tokens',
     priority: 12
   },
   {
     prefix: 'OPENCODE_ZEN_',
     name: 'OpenCode Zen',
-    description: 'Pay-as-you-go access to curated coding models',
+    descriptionKey: 'settings.providerDesc.openCodeZen',
     docsUrl: 'https://opencode.ai/auth',
     priority: 13
   },
   {
     prefix: 'OPENCODE_GO_',
     name: 'OpenCode Go',
-    description: '$10/month subscription for open coding models',
+    descriptionKey: 'settings.providerDesc.openCodeGo',
     docsUrl: 'https://opencode.ai/auth',
     priority: 14
   },
   {
     prefix: 'NVIDIA_',
     name: 'NVIDIA NIM',
-    description: 'build.nvidia.com or your own local NIM endpoint',
+    descriptionKey: 'settings.providerDesc.nvidia',
     docsUrl: 'https://build.nvidia.com/',
     priority: 15
   },
   {
     prefix: 'OLLAMA_',
     name: 'Ollama Cloud',
-    description: 'Cloud-hosted open models from ollama.com',
+    descriptionKey: 'settings.providerDesc.ollama',
     docsUrl: 'https://ollama.com/settings',
     priority: 16
   },
   {
     prefix: 'LM_',
     name: 'LM Studio',
-    description: 'Local LM Studio server (OpenAI-compatible)',
+    descriptionKey: 'settings.providerDesc.lmStudio',
     docsUrl: 'https://lmstudio.ai/docs/local-server',
     priority: 17
   },
   {
     prefix: 'STEPFUN_',
     name: 'StepFun',
-    description: 'StepFun Step Plan coding models',
+    descriptionKey: 'settings.providerDesc.stepFun',
     docsUrl: 'https://platform.stepfun.com/',
     priority: 18
   },
   {
     prefix: 'XIAOMI_',
     name: 'Xiaomi MiMo',
-    description: 'MiMo-V2.5 and Xiaomi proprietary models',
+    descriptionKey: 'settings.providerDesc.xiaomi',
     docsUrl: 'https://platform.xiaomimimo.com',
     priority: 19
   },
   {
     prefix: 'ARCEEAI_',
     name: 'Arcee AI',
-    description: 'Arcee-hosted small + medium models',
+    descriptionKey: 'settings.providerDesc.arcee',
     docsUrl: 'https://chat.arcee.ai/',
     priority: 20
   },
@@ -193,21 +194,21 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'GMI_',
     name: 'GMI Cloud',
-    description: 'GMI Cloud GPU + model serving',
+    descriptionKey: 'settings.providerDesc.gmi',
     docsUrl: 'https://www.gmicloud.ai/',
     priority: 21
   },
   {
     prefix: 'AZURE_FOUNDRY_',
     name: 'Azure Foundry',
-    description: 'Azure AI Foundry custom endpoints (OpenAI / Anthropic-compatible)',
+    descriptionKey: 'settings.providerDesc.azureFoundry',
     docsUrl: 'https://ai.azure.com/',
     priority: 22
   },
   {
     prefix: 'AWS_',
     name: 'AWS Bedrock',
-    description: 'Authenticate via AWS profile + region',
+    descriptionKey: 'settings.providerDesc.awsBedrock',
     docsUrl: 'https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-regions.html',
     priority: 23
   }
@@ -241,8 +242,7 @@ export const ENUM_OPTIONS: Record<string, string[]> = {
   'memory.provider': ['', 'builtin', 'honcho'],
   'stt.elevenlabs.model_id': ['scribe_v2', 'scribe_v1'],
   'stt.local.model': ['tiny', 'base', 'small', 'medium', 'large-v3'],
-  'tts.openai.voice': ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'],
-  'updates.non_interactive_local_changes': ['stash', 'discard']
+  'tts.openai.voice': ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 }
 
 export const FIELD_LABELS: Record<string, string> = {
@@ -310,8 +310,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'delegation.max_iterations': 'Subagent Turn Limit',
   'delegation.max_concurrent_children': 'Parallel Subagents',
   'delegation.child_timeout_seconds': 'Subagent Timeout',
-  'delegation.reasoning_effort': 'Subagent Reasoning Effort',
-  'updates.non_interactive_local_changes': 'In-App Update Local Changes'
+  'delegation.reasoning_effort': 'Subagent Reasoning Effort'
 }
 
 export const FIELD_DESCRIPTIONS: Record<string, string> = {
@@ -338,9 +337,7 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = {
   'voice.auto_tts': 'Automatically speak assistant responses.',
   'stt.enabled': 'Enable local or provider-backed speech transcription.',
   'stt.elevenlabs.language_code': 'Optional ISO-639-3 language code. Blank lets ElevenLabs auto-detect.',
-  'agent.max_turns': 'Upper bound for tool-calling turns before Hermes stops a run.',
-  'updates.non_interactive_local_changes':
-    'When Hermes updates itself from the app (no terminal prompt), keep local source edits (stash) or throw them away (discard). Terminal updates always ask.'
+  'agent.max_turns': 'Upper bound for tool-calling turns before Hermes stops a run.'
 }
 
 // Curated desktop config surface: only fields a user might tune from the app.
@@ -453,8 +450,7 @@ export const SECTIONS: DesktopConfigSection[] = [
       'delegation.max_iterations',
       'delegation.max_concurrent_children',
       'delegation.child_timeout_seconds',
-      'delegation.reasoning_effort',
-      'updates.non_interactive_local_changes'
+      'delegation.reasoning_effort'
     ]
   }
 ]

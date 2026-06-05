@@ -1,12 +1,12 @@
 import { useStore } from '@nanostores/react'
 import { IconBookmark, IconBookmarkFilled, IconDownload, IconTrash } from '@tabler/icons-react'
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { SearchField } from '@/components/ui/search-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { Tip } from '@/components/ui/tooltip'
 import { getActionStatus, getLogs, getStatus, getUsageAnalytics, restartGateway, updateHermes } from '@/hermes'
 import type { ActionStatusResponse, AnalyticsResponse, StatusResponse } from '@/hermes'
 import { sessionTitle } from '@/lib/chat-runtime'
@@ -36,17 +36,8 @@ interface CommandCenterViewProps {
   onOpenSession: (sessionId: string) => void
 }
 
-const SECTION_LABELS: Record<CommandCenterSection, string> = {
-  sessions: 'Sessions',
-  system: 'System',
-  usage: 'Usage'
-}
-
-const SECTION_DESCRIPTIONS: Record<CommandCenterSection, string> = {
-  sessions: 'Search and manage sessions',
-  system: 'Status, logs, and system actions',
-  usage: 'Token, cost, and skill activity over time'
-}
+const sectionLabelKey = (section: CommandCenterSection) => `commandCenter.sections.${section}`
+const sectionDescriptionKey = (section: CommandCenterSection) => `commandCenter.descriptions.${section}`
 
 const SECTION_ICONS: Record<CommandCenterSection, IconComponent> = {
   sessions: Pin,
@@ -94,18 +85,17 @@ function RowIconButton({
   title: string
 }) {
   return (
-    <Tip label={title}>
-      <Button
-        aria-label={title}
-        className={cn('text-(--ui-text-tertiary) hover:bg-(--chrome-action-hover) hover:text-foreground', className)}
-        onClick={onClick}
-        size="icon-xs"
-        type="button"
-        variant="ghost"
-      >
-        {children}
-      </Button>
-    </Tip>
+    <Button
+      aria-label={title}
+      className={cn('text-(--ui-text-tertiary) hover:bg-(--chrome-action-hover) hover:text-foreground', className)}
+      onClick={onClick}
+      size="icon-xs"
+      title={title}
+      type="button"
+      variant="ghost"
+    >
+      {children}
+    </Button>
   )
 }
 
@@ -124,6 +114,7 @@ function EmptyPanel({ action, description, title }: { action?: ReactNode; descri
 }
 
 export function CommandCenterView({ initialSection, onClose, onDeleteSession, onOpenSession }: CommandCenterViewProps) {
+  const { t } = useTranslation()
   const sessions = useStore($sessions)
   const pinnedSessionIds = useStore($pinnedSessionIds)
 
@@ -254,7 +245,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
         if (!nextStatus) {
           const pendingStatus = {
             exit_code: null,
-            lines: ['Action started, waiting for status...'],
+            lines: [t('commandCenter.system.actionWaiting')],
             name: started.name,
             pid: started.pid,
             running: true
@@ -269,11 +260,11 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
         void refreshSystem()
       }
     },
-    [refreshSystem]
+    [refreshSystem, t]
   )
 
   return (
-    <OverlayView closeLabel="Close command center" onClose={onClose}>
+    <OverlayView closeLabel={t('commandCenter.close')} onClose={onClose}>
       <OverlaySplitLayout>
         <OverlaySidebar>
           {SECTIONS.map(value => (
@@ -281,7 +272,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
               active={section === value}
               icon={SECTION_ICONS[value]}
               key={value}
-              label={SECTION_LABELS[value]}
+              label={t(sectionLabelKey(value))}
               onClick={() => setSection(value)}
             />
           ))}
@@ -291,10 +282,10 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
           <header className="mb-4 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-[length:var(--conversation-text-font-size)] font-semibold text-foreground">
-                {SECTION_LABELS[section]}
+                {t(sectionLabelKey(section))}
               </h2>
               <p className="mt-0.5 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-                {SECTION_DESCRIPTIONS[section]}
+                {t(sectionDescriptionKey(section))}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -302,7 +293,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                 <SearchField
                   containerClassName="max-w-[40vw]"
                   onChange={next => setQuery(next)}
-                  placeholder="Search sessions…"
+                  placeholder={t('commandCenter.sessions.searchPlaceholder')}
                   value={query}
                 />
               )}
@@ -322,10 +313,10 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                 <EmptyPanel
                   description={
                     debouncedQuery
-                      ? 'No sessions match your search.'
-                      : 'Sessions you start will show up here to search, pin, and export.'
+                      ? t('commandCenter.sessions.empty.noSearchResults')
+                      : t('commandCenter.sessions.empty.noSessionsDescription')
                   }
-                  title={debouncedQuery ? 'No matches' : 'No sessions yet'}
+                  title={debouncedQuery ? t('commandCenter.sessions.empty.noMatches') : t('commandCenter.sessions.empty.noSessions')}
                 />
               ) : (
                 <ul>
@@ -350,7 +341,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                           <RowIconButton
                             onClick={() => (pinned ? unpinSession(pinId) : pinSession(pinId))}
-                            title={pinned ? 'Unpin session' : 'Pin session'}
+                            title={pinned ? t('commandCenter.sessions.actions.unpin') : t('commandCenter.sessions.actions.pin')}
                           >
                             {pinned ? (
                               <IconBookmarkFilled className="size-3.5" />
@@ -360,14 +351,14 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                           </RowIconButton>
                           <RowIconButton
                             onClick={() => void exportSession(session.id, { session, title: sessionTitle(session) })}
-                            title="Export session"
+                            title={t('commandCenter.sessions.actions.export')}
                           >
                             <IconDownload className="size-3.5" />
                           </RowIconButton>
                           <RowIconButton
                             className="hover:text-destructive"
                             onClick={() => void onDeleteSession(session.id)}
-                            title="Delete session"
+                            title={t('commandCenter.sessions.actions.delete')}
                           >
                             <IconTrash className="size-3.5" />
                           </RowIconButton>
@@ -401,38 +392,38 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                             )}
                           />
                           <span className="text-[length:var(--conversation-text-font-size)] font-medium text-foreground">
-                            {status.gateway_running ? 'Messaging gateway running' : 'Messaging gateway stopped'}
+                            {status.gateway_running ? t('commandCenter.system.gatewayRunning') : t('commandCenter.system.gatewayStopped')}
                           </span>
                         </div>
                         <div className="mt-1 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-                          Hermes {status.version} · Active sessions {status.active_sessions}
+                          {t('commandCenter.system.versionActiveSessions', { sessions: status.active_sessions, version: status.version })}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
                         <Button onClick={() => void runSystemAction('restart')} size="xs" variant="text">
-                          Restart messaging
+                          {t('commandCenter.system.restartMessaging')}
                         </Button>
                         <Button onClick={() => void runSystemAction('update')} size="xs" variant="textStrong">
-                          Update Hermes
+                          {t('commandCenter.system.updateHermes')}
                         </Button>
                       </div>
                     </div>
                     {systemAction && (
                       <div className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
                         {systemAction.name} ·{' '}
-                        {systemAction.running ? 'running' : systemAction.exit_code === 0 ? 'done' : 'failed'}
+                        {systemAction.running ? t('commandCenter.system.running') : systemAction.exit_code === 0 ? t('commandCenter.system.done') : t('commandCenter.system.failed')}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <PageLoader className="min-h-32" label="Loading status" />
+                  <PageLoader className="min-h-32" label={t('commandCenter.system.loadingStatus')} />
                 )}
               </div>
 
               <div className="flex min-h-0 flex-col">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-(--ui-text-tertiary)">
-                    Recent logs
+                    {t('commandCenter.system.recentLogs')}
                   </span>
                   {systemError && (
                     <span className="inline-flex items-center gap-1 text-[length:var(--conversation-caption-font-size)] text-destructive">
@@ -442,7 +433,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                   )}
                 </div>
                 <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-3 font-mono text-[0.65rem] leading-relaxed text-(--ui-text-tertiary)">
-                  {logs.length ? logs.join('\n') : 'No logs loaded yet.'}
+                  {logs.length ? logs.join('\n') : t('commandCenter.system.noLogs')}
                 </pre>
               </div>
             </div>
@@ -494,6 +485,7 @@ interface UsagePanelProps {
 }
 
 function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProps) {
+  const { t } = useTranslation()
   const daily = useMemo(() => usage?.daily ?? [], [usage])
   const totals = usage?.totals
   const byModel = usage?.by_model ?? []
@@ -511,16 +503,16 @@ function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProp
     return (
       <div className="min-h-0 flex-1">
         {loading ? (
-          <PageLoader className="min-h-48" label="Loading usage" />
+          <PageLoader className="min-h-48" label={t('commandCenter.usage.loading')} />
         ) : (
           <EmptyPanel
             action={
               <Button onClick={onRefresh} size="xs" variant="outline">
-                Retry
+                {t('common.retry')}
               </Button>
             }
-            description={`No token, cost, or skill activity recorded in the last ${period} days.`}
-            title="No usage yet"
+            description={t('commandCenter.usage.emptyDescription', { count: period })}
+            title={t('commandCenter.usage.noUsage')}
           />
         )}
       </div>
@@ -537,15 +529,15 @@ function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProp
       )}
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-4 border-b border-(--ui-stroke-tertiary) pb-5 sm:grid-cols-4">
-        <UsageStat label="Sessions" value={formatInteger(totals.total_sessions)} />
-        <UsageStat label="API calls" value={formatInteger(totals.total_api_calls)} />
+        <UsageStat label={t('commandCenter.usage.stats.sessions')} value={formatInteger(totals.total_sessions)} />
+        <UsageStat label={t('commandCenter.usage.stats.apiCalls')} value={formatInteger(totals.total_api_calls)} />
         <UsageStat
-          label="Tokens in/out"
+          label={t('commandCenter.usage.stats.tokensInOut')}
           value={`${formatTokens(totals.total_input)} / ${formatTokens(totals.total_output)}`}
         />
         <UsageStat
-          hint={totals.total_actual_cost > 0 ? `actual ${formatCost(totals.total_actual_cost)}` : undefined}
-          label="Est. cost"
+          hint={totals.total_actual_cost > 0 ? t('commandCenter.usage.actualCost', { cost: formatCost(totals.total_actual_cost) }) : undefined}
+          label={t('commandCenter.usage.stats.estimatedCost')}
           value={formatCost(totals.total_estimated_cost)}
         />
       </div>
@@ -553,20 +545,20 @@ function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProp
       <section>
         <div className="mb-2 flex items-baseline justify-between">
           <span className="text-[0.625rem] font-medium uppercase tracking-[0.08em] text-(--ui-text-tertiary)">
-            Daily tokens
+            {t('commandCenter.usage.dailyTokens')}
           </span>
           <span className="flex items-center gap-3 text-[0.65rem] text-(--ui-text-tertiary)">
             <span className="inline-flex items-center gap-1">
-              <span className="size-2 rounded-[1px] bg-[color:var(--dt-primary)]/60" /> input
+              <span className="size-2 rounded-[1px] bg-[color:var(--dt-primary)]/60" /> {t('commandCenter.usage.input')}
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="size-2 rounded-[1px] bg-emerald-500/70" /> output
+              <span className="size-2 rounded-[1px] bg-emerald-500/70" /> {t('commandCenter.usage.output')}
             </span>
           </span>
         </div>
         {daily.length === 0 ? (
           <div className="grid h-24 place-items-center text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-            No daily activity.
+            {t('commandCenter.usage.noDailyActivity')}
           </div>
         ) : (
           <>
@@ -576,21 +568,20 @@ function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProp
                 const outputH = Math.round(((entry.output_tokens || 0) / maxTokens) * 96)
 
                 return (
-                  <Tip
+                  <div
+                    className="group relative flex h-24 min-w-0 flex-1 flex-col justify-end"
                     key={entry.day}
-                    label={`${entry.day} · in ${formatTokens(entry.input_tokens)} · out ${formatTokens(entry.output_tokens)}`}
+                    title={`${entry.day} · ${t('commandCenter.usage.inputShort')} ${formatTokens(entry.input_tokens)} · ${t('commandCenter.usage.outputShort')} ${formatTokens(entry.output_tokens)}`}
                   >
-                    <div className="group relative flex h-24 min-w-0 flex-1 flex-col justify-end">
-                      <div
-                        className="w-full rounded-t-[1px] bg-[color:var(--dt-primary)]/50"
-                        style={{ height: Math.max(inputH, entry.input_tokens > 0 ? 1 : 0) }}
-                      />
-                      <div
-                        className="w-full bg-emerald-500/60"
-                        style={{ height: Math.max(outputH, entry.output_tokens > 0 ? 1 : 0) }}
-                      />
-                    </div>
-                  </Tip>
+                    <div
+                      className="w-full rounded-t-[1px] bg-[color:var(--dt-primary)]/50"
+                      style={{ height: Math.max(inputH, entry.input_tokens > 0 ? 1 : 0) }}
+                    />
+                    <div
+                      className="w-full bg-emerald-500/60"
+                      style={{ height: Math.max(outputH, entry.output_tokens > 0 ? 1 : 0) }}
+                    />
+                  </div>
                 )
               })}
             </div>
@@ -604,22 +595,22 @@ function UsagePanel({ error, loading, onRefresh, period, usage }: UsagePanelProp
 
       <div className="grid min-h-0 gap-x-8 gap-y-5 border-t border-(--ui-stroke-tertiary) pt-5 sm:grid-cols-2">
         <UsageList
-          emptyLabel="No model usage yet."
+          emptyLabel={t('commandCenter.usage.noModelUsage')}
           rows={byModel.slice(0, 6).map(entry => ({
             key: entry.model,
             label: entry.model,
             value: `${formatTokens((entry.input_tokens || 0) + (entry.output_tokens || 0))} · ${formatCost(entry.estimated_cost)}`
           }))}
-          title="Top models"
+          title={t('commandCenter.usage.topModels')}
         />
         <UsageList
-          emptyLabel="No skill activity yet."
+          emptyLabel={t('commandCenter.usage.noSkillActivity')}
           rows={topSkills.slice(0, 6).map(entry => ({
             key: entry.skill,
             label: entry.skill,
-            value: `${entry.total_count.toLocaleString()} actions`
+            value: t('commandCenter.usage.actions', { count: entry.total_count })
           }))}
-          title="Top skills"
+          title={t('commandCenter.usage.topSkills')}
         />
       </div>
     </div>

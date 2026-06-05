@@ -1,0 +1,67 @@
+name: Sync Upstream
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_url:
+        description: 'Upstream repository URL'
+        required: false
+        default: 'https://github.com/NousResearch/hermes-agent.git'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    name: Merge upstream/main into cn-source PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout cn-source
+        uses: actions/checkout@v4
+        with:
+          ref: cn-source
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Add and fetch upstream
+        run: |
+          git remote add upstream '${{ inputs.upstream_url }}'
+          git fetch upstream main
+
+      - name: Create sync branch and merge upstream/main
+        env:
+          BRANCH_NAME: sync/upstream-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          git checkout -b "$BRANCH_NAME"
+          git merge --no-edit upstream/main
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+
+      - name: Push sync branch
+        run: git push origin "$BRANCH_NAME"
+
+      - name: Open pull request to cn-source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base cn-source \
+            --head "$BRANCH_NAME" \
+            --title 'Sync upstream main into cn-source' \
+            --body "$(cat <<'EOF'
+          ## Summary
+          - Merges upstream/main into cn-source on a dedicated sync branch.
+          - Created by the manual sync-upstream workflow.
+
+          ## Notes
+          Resolve any merge conflicts in the sync branch before merging this PR.
+          EOF
+          )"

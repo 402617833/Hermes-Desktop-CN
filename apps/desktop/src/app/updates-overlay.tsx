@@ -1,5 +1,7 @@
 import { useStore } from '@nanostores/react'
+import type { TFunction } from 'i18next'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { writeClipboardText } from '@/components/ui/copy-button'
@@ -21,22 +23,12 @@ import {
   type UpdateApplyState
 } from '@/store/updates'
 
-const STAGE_LABELS: Record<DesktopUpdateStage, string> = {
-  idle: 'Getting ready…',
-  prepare: 'Getting ready…',
-  fetch: 'Downloading…',
-  pull: 'Almost there…',
-  pydeps: 'Finishing up…',
-  restart: 'Restarting Hermes…',
-  manual: 'Update from your terminal',
-  error: 'Update paused'
-}
-
 function totalItems(groups: readonly CommitGroup[]) {
   return groups.reduce((sum, g) => sum + g.items.length, 0)
 }
 
 export function UpdatesOverlay() {
+  const { t } = useTranslation()
   const open = useStore($updateOverlayOpen)
   const status = useStore($updateStatus)
   const checking = useStore($updateChecking)
@@ -81,14 +73,14 @@ export function UpdatesOverlay() {
         className="max-w-sm overflow-hidden border-border/70 p-0 gap-0"
         showCloseButton={phase !== 'applying'}
       >
-        {phase === 'applying' && <ApplyingView apply={apply} />}
+        {phase === 'applying' && <ApplyingView apply={apply} t={t} />}
 
         {phase === 'manual' && (
-          <ManualView command={apply.command ?? 'hermes update'} onDone={() => handleClose(false)} />
+          <ManualView command={apply.command ?? 'hermes update'} onDone={() => handleClose(false)} t={t} />
         )}
 
         {phase === 'error' && (
-          <ErrorView message={apply.message} onDismiss={() => handleClose(false)} onRetry={handleInstall} />
+          <ErrorView message={apply.message} onDismiss={() => handleClose(false)} onRetry={handleInstall} t={t} />
         )}
 
         {phase === 'idle' && (
@@ -100,6 +92,7 @@ export function UpdatesOverlay() {
             onLater={() => handleClose(false)}
             onRetryCheck={() => void checkUpdates()}
             status={status}
+            t={t}
           />
         )}
       </DialogContent>
@@ -114,7 +107,8 @@ function IdleView({
   onInstall,
   onLater,
   onRetryCheck,
-  status
+  status,
+  t
 }: {
   behind: number
   checking: boolean
@@ -123,10 +117,11 @@ function IdleView({
   onLater: () => void
   onRetryCheck: () => void
   status: DesktopUpdateStatus | null
+  t: TFunction
 }) {
   if (!status && checking) {
     return (
-      <CenteredStatus icon={<Loader2 className="size-6 animate-spin text-primary" />} title="Looking for updates…" />
+      <CenteredStatus icon={<Loader2 className="size-6 animate-spin text-primary" />} title={t('updates.checking')} />
     )
   }
 
@@ -135,11 +130,11 @@ function IdleView({
       <CenteredStatus
         action={
           <Button onClick={onRetryCheck} size="sm">
-            Try again
+            {t('updates.retry')}
           </Button>
         }
         icon={<AlertCircle className="size-6 text-muted-foreground" />}
-        title="Couldn’t check for updates"
+        title={t('updates.checkFailed')}
       />
     )
   }
@@ -147,9 +142,9 @@ function IdleView({
   if (!status.supported) {
     return (
       <CenteredStatus
-        body={status.message ?? 'This version of Hermes can’t update itself from inside the app.'}
+        body={status.message ?? t('updates.notSupported')}
         icon={<AlertCircle className="size-6 text-muted-foreground" />}
-        title="Update not available"
+        title={t('updates.unavailable')}
       />
     )
   }
@@ -159,12 +154,12 @@ function IdleView({
       <CenteredStatus
         action={
           <Button disabled={checking} onClick={onRetryCheck} size="sm">
-            Try again
+            {t('updates.retry')}
           </Button>
         }
-        body="Check your connection and try again."
+        body={t('updates.checkNetwork')}
         icon={<AlertCircle className="size-6 text-muted-foreground" />}
-        title="Couldn’t check for updates"
+        title={t('updates.checkFailed')}
       />
     )
   }
@@ -172,9 +167,9 @@ function IdleView({
   if (behind === 0) {
     return (
       <CenteredStatus
-        body="You’re running the latest version."
+        body={t('updates.upToDate')}
         icon={<CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" />}
-        title="You’re all set"
+        title={t('updates.allGood')}
       />
     )
   }
@@ -190,9 +185,9 @@ function IdleView({
           <Sparkles className="size-7" />
         </span>
 
-        <DialogTitle className="text-center text-xl">New update available</DialogTitle>
+        <DialogTitle className="text-center text-xl">{t('updates.available')}</DialogTitle>
         <DialogDescription className="text-center text-sm">
-          A new version of Hermes is ready to install.
+          {t('updates.readyToInstall')}
         </DialogDescription>
       </div>
 
@@ -214,27 +209,27 @@ function IdleView({
 
       <div className="grid gap-2">
         <Button className="font-semibold" onClick={onInstall} size="lg">
-          Update now
+          {t('updates.updateNow')}
         </Button>
         <button
           className="text-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           onClick={onLater}
           type="button"
         >
-          Maybe later
+          {t('updates.later')}
         </button>
       </div>
 
       {remaining > 0 && (
         <p className="text-center text-xs text-muted-foreground">
-          + {remaining} more change{remaining === 1 ? '' : 's'} included.
+          {t('updates.moreChanges', { count: remaining })}
         </p>
       )}
     </div>
   )
 }
 
-function ManualView({ command, onDone }: { command: string; onDone: () => void }) {
+function ManualView({ command, onDone, t }: { command: string; onDone: () => void; t: TFunction }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -251,9 +246,9 @@ function ManualView({ command, onDone }: { command: string; onDone: () => void }
           <Terminal className="size-7" />
         </span>
 
-        <DialogTitle className="text-center text-xl">Update from your terminal</DialogTitle>
+        <DialogTitle className="text-center text-xl">{t('updates.manualTitle')}</DialogTitle>
         <DialogDescription className="text-center text-sm">
-          You installed Hermes from the command line, so updates run there too. Paste this into your terminal:
+          {t('updates.manualDescription')}
         </DialogDescription>
       </div>
 
@@ -270,30 +265,41 @@ function ManualView({ command, onDone }: { command: string; onDone: () => void }
           {copied ? (
             <>
               <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              Copied
+              {t('updates.copied')}
             </>
           ) : (
             <>
               <Copy className="size-3.5" />
-              Copy
+              {t('updates.copy')}
             </>
           )}
         </span>
       </button>
 
       <p className="text-center text-xs text-muted-foreground">
-        Hermes will pick up the new version next time you launch it.
+        {t('updates.manualRestart')}
       </p>
 
       <Button className="font-semibold" onClick={onDone} size="lg" variant="outline">
-        Done
+        {t('updates.done')}
       </Button>
     </div>
   )
 }
 
-function ApplyingView({ apply }: { apply: UpdateApplyState }) {
-  const label = STAGE_LABELS[apply.stage] ?? 'Updating Hermes…'
+function ApplyingView({ apply, t }: { apply: UpdateApplyState; t: TFunction }) {
+  const STAGE_LABELS: Record<DesktopUpdateStage, string> = {
+    idle: t('updates.stageLabels.prepare'),
+    prepare: t('updates.stageLabels.prepare'),
+    fetch: t('updates.stageLabels.download'),
+    pull: t('updates.stageLabels.finishing'),
+    pydeps: t('updates.stageLabels.finalizing'),
+    restart: t('updates.stageLabels.restart'),
+    manual: t('updates.manualTitle'),
+    error: t('updates.stagePaused')
+  }
+
+  const label = STAGE_LABELS[apply.stage] ?? t('updates.updating')
 
   const percent =
     typeof apply.percent === 'number' && Number.isFinite(apply.percent)
@@ -309,7 +315,7 @@ function ApplyingView({ apply }: { apply: UpdateApplyState }) {
 
         <DialogTitle className="text-center text-xl">{label}</DialogTitle>
         <DialogDescription className="text-center text-sm">
-          The Hermes updater will take over in its own window and reopen Hermes when it&rsquo;s done.
+          {t('updates.updaterWindow')}
         </DialogDescription>
       </div>
 
@@ -323,29 +329,29 @@ function ApplyingView({ apply }: { apply: UpdateApplyState }) {
         />
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">Hermes will close to apply the update.</p>
+      <p className="text-center text-xs text-muted-foreground">{t('updates.willClose')}</p>
     </div>
   )
 }
 
-function ErrorView({ message, onDismiss, onRetry }: { message: string; onDismiss: () => void; onRetry: () => void }) {
+function ErrorView({ message, onDismiss, onRetry, t }: { message: string; onDismiss: () => void; onRetry: () => void; t: TFunction }) {
   return (
     <ErrorState
       className="px-6 pb-6 pt-7 pr-8"
       description={
         <DialogDescription className="max-w-prose text-center text-sm leading-5 text-muted-foreground">
-          {message || 'No worries — nothing was lost. You can try again now.'}
+          {message || t('updates.errorDescription')}
         </DialogDescription>
       }
       title={
-        <DialogTitle className="text-center text-xl font-semibold tracking-tight">Update didn’t finish</DialogTitle>
+        <DialogTitle className="text-center text-xl font-semibold tracking-tight">{t('updates.failed')}</DialogTitle>
       }
     >
       <Button className="font-semibold" onClick={onRetry} size="lg">
-        Try again
+        {t('updates.retry')}
       </Button>
       <Button onClick={onDismiss} variant="text">
-        Not now
+        {t('updates.later')}
       </Button>
     </ErrorState>
   )

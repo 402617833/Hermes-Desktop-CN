@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { BrailleSpinner } from '@/components/ui/braille-spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -32,6 +33,7 @@ export function ModelVisibilityDialog({
   open,
   sessionId
 }: ModelVisibilityDialogProps) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const stored = useStore($visibleModels)
 
@@ -76,7 +78,7 @@ export function ModelVisibilityDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-xs gap-0 overflow-hidden p-0">
         <DialogHeader className="px-3 pb-1 pt-3">
-          <DialogTitle className="text-[0.8125rem]">Models</DialogTitle>
+          <DialogTitle className="text-[0.8125rem]">{t('modelVisibility.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="px-3 py-1.5">
@@ -84,7 +86,7 @@ export function ModelVisibilityDialog({
             autoFocus
             className="h-5 w-full bg-transparent text-xs text-foreground placeholder:text-(--ui-text-tertiary) focus:outline-none"
             onChange={event => setSearch(event.target.value)}
-            placeholder="Search models"
+            placeholder={t('modelVisibility.search')}
             type="text"
             value={search}
           />
@@ -93,7 +95,7 @@ export function ModelVisibilityDialog({
         <div className="max-h-[55vh] overflow-y-auto pb-1">
           {providers.length === 0 ? (
             <div className="px-3 py-5 text-center text-xs text-muted-foreground">
-              {modelOptions.isPending ? <BrailleSpinner className="mx-auto text-sm" /> : 'No authenticated providers.'}
+              {modelOptions.isPending ? <BrailleSpinner className="mx-auto text-sm" /> : t('modelVisibility.noProviders')}
             </div>
           ) : (
             providers.map(provider => {
@@ -140,7 +142,7 @@ export function ModelVisibilityDialog({
             }}
             type="button"
           >
-            Add provider…
+            {t('modelVisibility.addProvider')}
           </button>
         </div>
       </DialogContent>

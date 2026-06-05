@@ -1,5 +1,6 @@
 import type { ChangeEvent, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 
 import { Input } from '@/components/ui/input'
@@ -37,9 +38,17 @@ function ConfigField({
   optionLabels?: Record<string, string>
   onChange: (value: unknown) => void
 }) {
-  const label = FIELD_LABELS[schemaKey] ?? prettyName(schemaKey.split('.').pop() ?? schemaKey)
+  const { t } = useTranslation()
+  const fieldKey = schemaKey.replaceAll('.', '__')
+  const fallbackLabel = FIELD_LABELS[schemaKey] ?? prettyName(schemaKey.split('.').pop() ?? schemaKey)
+  const label = t(`settings.fields.labels.${fieldKey}`, { defaultValue: fallbackLabel })
   const normalize = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '')
-  const rawDescription = (FIELD_DESCRIPTIONS[schemaKey] ?? schema.description ?? '').trim()
+  const fallbackDescription = (FIELD_DESCRIPTIONS[schemaKey] ?? schema.description ?? '').trim()
+
+  const rawDescription = fallbackDescription
+    ? t(`settings.fields.descriptions.${fieldKey}`, { defaultValue: fallbackDescription }).trim()
+    : ''
+
   const normalizedDesc = normalize(rawDescription)
 
   const description =
@@ -76,8 +85,8 @@ function ConfigField({
               {option
                 ? (optionLabels?.[option] ?? prettyName(option))
                 : schemaKey === 'display.personality'
-                  ? 'None'
-                  : '(none)'}
+                  ? t('settings.config.none')
+                  : `(${t('settings.config.none').toLowerCase()})`}
             </SelectItem>
           ))}
         </SelectContent>
@@ -97,7 +106,7 @@ function ConfigField({
             onChange(n)
           }
         }}
-        placeholder="Not set"
+        placeholder={t('settings.config.notSet')}
         type="number"
         value={value === undefined || value === null ? '' : String(value)}
       />
@@ -116,7 +125,7 @@ function ConfigField({
               .filter(Boolean)
           )
         }
-        placeholder="comma-separated values"
+        placeholder={t('settings.config.commaSeparatedValues')}
         value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
       />
     )
@@ -133,7 +142,7 @@ function ConfigField({
             /* keep last valid */
           }
         }}
-        placeholder="Not set"
+        placeholder={t('settings.config.notSet')}
         spellCheck={false}
         value={JSON.stringify(value, null, 2)}
       />,
@@ -148,14 +157,14 @@ function ConfigField({
       <Textarea
         className={cn('min-h-24 resize-y bg-background', CONTROL_TEXT)}
         onChange={e => onChange(e.target.value)}
-        placeholder="Not set"
+        placeholder={t('settings.config.notSet')}
         value={String(value ?? '')}
       />
     ) : (
       <Input
         className={CONTROL_TEXT}
         onChange={e => onChange(e.target.value)}
-        placeholder="Not set"
+        placeholder={t('settings.config.notSet')}
         value={String(value ?? '')}
       />
     ),
@@ -174,6 +183,7 @@ export function ConfigSettings({
   onMainModelChanged?: (provider: string, model: string) => void
   importInputRef: React.RefObject<HTMLInputElement | null>
 }) {
+  const { t } = useTranslation()
   const [config, setConfig] = useState<HermesConfigRecord | null>(null)
   const [_defaults, setDefaults] = useState<HermesConfigRecord | null>(null)
   const [schema, setSchema] = useState<Record<string, ConfigFieldSchema> | null>(null)
@@ -194,10 +204,10 @@ export function ConfigSettings({
         setDefaults(d)
         setSchema(s.fields)
       })
-      .catch(err => notifyError(err, 'Settings failed to load'))
+      .catch(err => notifyError(err, t('settings.config.failedToLoad')))
 
     return () => void (cancelled = true)
-  }, [])
+  }, [t])
 
   useEffect(() => {
     let cancelled = false
@@ -228,7 +238,7 @@ export function ConfigSettings({
 
     const v = saveVersion
 
-    const t = window.setTimeout(() => {
+    const timeout = window.setTimeout(() => {
       void (async () => {
         try {
           await saveHermesConfig(config)
@@ -238,14 +248,14 @@ export function ConfigSettings({
           }
         } catch (err) {
           if (saveVersionRef.current === v) {
-            notifyError(err, 'Autosave failed')
+            notifyError(err, t('settings.config.autosaveFailed'))
           }
         }
       })()
     }, 550)
 
-    return () => window.clearTimeout(t)
-  }, [config, onConfigSaved, saveVersion])
+    return () => window.clearTimeout(timeout)
+  }, [config, onConfigSaved, saveVersion, t])
 
   const updateConfig = (next: HermesConfigRecord) => {
     saveVersionRef.current += 1
@@ -311,9 +321,9 @@ export function ConfigSettings({
     reader.onload = () => {
       try {
         updateConfig(JSON.parse(String(reader.result)))
-        notify({ kind: 'success', title: 'Config imported', message: 'Saving…' })
+        notify({ kind: 'success', title: t('settings.config.imported'), message: t('settings.config.saving') })
       } catch (err) {
-        notifyError(err, 'Invalid config JSON')
+        notifyError(err, t('settings.config.invalidJson'))
       }
     }
 
@@ -322,7 +332,7 @@ export function ConfigSettings({
   }
 
   if (!config || !schema) {
-    return <LoadingState label="Loading Hermes configuration..." />
+    return <LoadingState label={t('settings.config.loading')} />
   }
 
   return (
@@ -333,7 +343,7 @@ export function ConfigSettings({
         </div>
       )}
       {fields.length === 0 ? (
-        <EmptyState description="This section has no adjustable settings." title="Nothing to configure" />
+        <EmptyState description={t('settings.config.noAdjustableSettings')} title={t('settings.config.nothingToConfigure')} />
       ) : (
         <div className="grid gap-1">
           {fields.map(([key, field]) => (

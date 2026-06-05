@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import type {
@@ -49,13 +50,6 @@ interface StageRowProps {
   now: number
 }
 
-const STATE_LABEL: Record<DesktopBootstrapStageState, string> = {
-  pending: 'Pending',
-  running: 'Installing',
-  succeeded: 'Done',
-  skipped: 'Skipped',
-  failed: 'Failed'
-}
 
 function formatStageName(name: string): string {
   // 'system-packages' -> 'System packages'; 'uv' stays 'uv'
@@ -104,6 +98,7 @@ function formatElapsed(ms: number): string {
 }
 
 function StageRow({ descriptor, result, isCurrent, now }: StageRowProps) {
+  const { t } = useTranslation()
   const state: DesktopBootstrapStageState = result?.state || 'pending'
 
   const elapsed =
@@ -147,9 +142,9 @@ function StageRow({ descriptor, result, isCurrent, now }: StageRowProps) {
             {formatStageName(descriptor.name)}
           </span>
           <span className="flex-shrink-0 text-xs tabular-nums text-muted-foreground">
-            {state === 'running' ? (elapsed ? `${STATE_LABEL[state]} · ${elapsed}` : STATE_LABEL[state]) : null}
+            {state === 'running' ? (elapsed ? `${t('install.installing')} · ${elapsed}` : t('install.installing')) : null}
             {state === 'succeeded' || state === 'skipped' ? formatDuration(result?.durationMs) : null}
-            {state === 'failed' ? STATE_LABEL[state] : null}
+            {state === 'failed' ? t('install.failed') : null}
           </span>
         </div>
         {reason && state !== 'pending' && <p className="mt-0.5 truncate text-xs text-muted-foreground">{reason}</p>}

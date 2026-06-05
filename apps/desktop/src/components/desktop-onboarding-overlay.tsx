@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ModelPickerDialog } from '@/components/model-picker'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,6 @@ import {
   confirmOnboardingModel,
   copyDeviceCode,
   copyExternalCommand,
-  dismissFirstRunOnboarding,
   type OnboardingContext,
   type OnboardingFlow,
   peekPendingProviderOAuth,
@@ -118,13 +118,6 @@ const PROVIDER_DISPLAY: Record<string, { order: number; title: string }> = {
 
 const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 
-const FLOW_SUBTITLES: Record<OAuthProvider['flow'], string> = {
-  pkce: 'Opens your browser to sign in, then continues here',
-  device_code: 'Opens a verification page in your browser — Hermes connects automatically',
-  loopback: 'Opens your browser to sign in — Hermes connects automatically',
-  external: 'Sign in once in your terminal, then come back to chat'
-}
-
 const providerTitle = (p: OAuthProvider) => PROVIDER_DISPLAY[p.id]?.title ?? p.name
 const orderOf = (p: OAuthProvider) => PROVIDER_DISPLAY[p.id]?.order ?? 99
 
@@ -132,6 +125,7 @@ export const sortProviders = (providers: OAuthProvider[]) =>
   [...providers].sort((a, b) => orderOf(a) - orderOf(b) || a.name.localeCompare(b.name))
 
 export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway }: DesktopOnboardingOverlayProps) {
+  const { t } = useTranslation()
   const onboarding = useStore($desktopOnboarding)
   const boot = useStore($desktopBoot)
   const ctxRef = useRef<OnboardingContext>({ requestGateway, onCompleted })
@@ -190,13 +184,6 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
     return null
   }
 
-  // The user chose "I'll choose a provider later" on first run. Stay out of the
-  // way on every subsequent launch — they re-enter via Settings → Providers
-  // (manual mode), which sets manual=true and bypasses this gate.
-  if (onboarding.firstRunSkipped && !onboarding.manual) {
-    return null
-  }
-
   const { flow } = onboarding
   const rawReason = onboarding.reason?.trim() || null
   const reason = rawReason && !isProviderSetupErrorMessage(rawReason) ? rawReason : null
@@ -212,7 +199,7 @@ export function DesktopOnboardingOverlay({ enabled, onCompleted, requestGateway 
         <Header />
         {onboarding.manual ? (
           <Button
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="absolute right-3 top-3 z-10 text-(--ui-text-tertiary) hover:bg-(--chrome-action-hover) hover:text-foreground"
             onClick={() => closeManualOnboarding()}
             size="icon-sm"
@@ -242,16 +229,30 @@ function ReasonNotice({ reason }: { reason: string }) {
 }
 
 function Preparing({ boot }: { boot: DesktopBootState }) {
+  const { t } = useTranslation()
   const progress = Math.max(2, Math.min(100, Math.round(boot.progress)))
   const hasError = Boolean(boot.error)
   const installing = boot.phase.startsWith('runtime.')
+
+  // Map boot phases to translation keys
+  const getSubtitle = () => {
+    if (boot.phase === 'gateway') {return t('onboarding.subtitles.gateway')}
+
+    if (boot.phase === 'bootstrap') {return t('onboarding.subtitles.bootstrap')}
+
+    if (boot.phase === 'models') {return t('onboarding.subtitles.models')}
+
+    if (boot.phase === 'ready') {return t('onboarding.subtitles.ready')}
+
+    return boot.message
+  }
 
   return (
     <div className="grid gap-3" role="status">
       <p className="text-sm text-muted-foreground">
         {installing
-          ? 'Hermes is finishing install. This usually takes under a minute on first run.'
-          : 'Starting Hermes…'}
+          ? 'Hermes 正在完成安装。首次运行通常不超过一分钟。'
+          : t('onboarding.preparing')}
       </p>
       <div className="h-2 overflow-hidden rounded-full bg-muted">
         <div
@@ -263,7 +264,7 @@ function Preparing({ boot }: { boot: DesktopBootState }) {
         />
       </div>
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-        <span className="truncate">{boot.message}</span>
+        <span className="truncate">{getSubtitle()}</span>
         <span>{progress}%</span>
       </div>
       {hasError ? <p className="text-xs text-destructive">{boot.error}</p> : null}
@@ -312,25 +313,18 @@ const persistShowAll = (value: boolean) => {
 }
 
 export function Picker({ ctx }: { ctx: OnboardingContext }) {
-  const { manual, mode, providers } = useStore($desktopOnboarding)
+  const { mode, providers } = useStore($desktopOnboarding)
   const [showAll, setShowAll] = useState(readShowAll)
   const ordered = useMemo(() => (providers ? sortProviders(providers) : []), [providers])
   const hasOauth = ordered.length > 0
 
   if (mode === 'apikey' || !hasOauth) {
     return (
-      <div className="grid gap-3">
-        <ApiKeyForm
-          canGoBack={hasOauth}
-          onBack={() => setOnboardingMode('oauth')}
-          onSave={(envKey, value, name) => saveOnboardingApiKey(envKey, value, name, ctx)}
-        />
-        {manual ? null : (
-          <div className="flex justify-center border-t border-(--ui-stroke-tertiary) pt-3">
-            <ChooseLaterLink />
-          </div>
-        )}
-      </div>
+      <ApiKeyForm
+        canGoBack={hasOauth}
+        onBack={() => setOnboardingMode('oauth')}
+        onSave={(envKey, value, name) => saveOnboardingApiKey(envKey, value, name, ctx)}
+      />
     )
   }
 
@@ -367,11 +361,7 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
           <ChevronDown className={cn('size-3.5 transition', showAll && 'rotate-180')} />
         </button>
       ) : null}
-      <div className="flex items-center justify-between gap-3 pt-1">
-        {/* First run only: let the user defer the choice and land in the app.
-            In manual mode the overlay already has a close affordance, so the
-            "choose later" escape would be redundant — hide it. */}
-        {manual ? <span /> : <ChooseLaterLink />}
+      <div className="flex justify-end pt-1">
         <button
           className="text-xs font-medium text-muted-foreground hover:text-foreground"
           onClick={() => setOnboardingMode('apikey')}
@@ -381,21 +371,6 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
         </button>
       </div>
     </div>
-  )
-}
-
-// "I'll choose a provider later" — dismisses the first-run picker and persists
-// the skip so it never re-nags. The user connects a provider any time from
-// Settings → Providers. Rendered only on the unconfigured first-run flow.
-function ChooseLaterLink() {
-  return (
-    <button
-      className="text-xs font-medium text-muted-foreground hover:text-foreground"
-      onClick={() => dismissFirstRunOnboarding()}
-      type="button"
-    >
-      I'll choose a provider later
-    </button>
   )
 }
 
@@ -469,8 +444,29 @@ export function ProviderRow({
   onSelect: (provider: OAuthProvider) => void
   provider: OAuthProvider
 }) {
+  const { t } = useTranslation()
   const loggedIn = provider.status?.logged_in
   const Trail = provider.flow === 'external' ? Terminal : ChevronRight
+
+  // Map flow types to translation keys
+  const getFlowSubtitle = (flow: OAuthProvider['flow']) => {
+    switch (flow) {
+      case 'pkce':
+        return t('onboarding.subtitles.gateway')
+
+      case 'device_code':
+        return t('onboarding.subtitles.bootstrap')
+
+      case 'loopback':
+        return t('onboarding.subtitles.models')
+
+      case 'external':
+        return t('onboarding.subtitles.ready')
+
+      default:
+        return ''
+    }
+  }
 
   return (
     <button
@@ -485,7 +481,7 @@ export function ProviderRow({
           </span>
           {loggedIn ? <ConnectedTag /> : null}
         </div>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{FLOW_SUBTITLES[provider.flow]}</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{getFlowSubtitle(provider.flow)}</p>
       </div>
       <Trail className="size-4 text-muted-foreground transition group-hover:text-foreground" />
     </button>

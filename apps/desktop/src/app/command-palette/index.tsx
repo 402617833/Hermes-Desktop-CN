@@ -1,7 +1,9 @@
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -27,7 +29,6 @@ import {
   Palette,
   Plus,
   Settings,
-  Settings2,
   Sun,
   Users,
   Wrench,
@@ -92,48 +93,40 @@ const toSessionEntry = (session: SessionRow): SessionEntry => ({
   title: sessionTitle(session)
 })
 
-const NON_CONFIG_SETTINGS: ReadonlyArray<{ icon: IconComponent; keywords?: string[]; label: string; tab: string }> = [
+const NON_CONFIG_SETTINGS: ReadonlyArray<{ icon: IconComponent; keywords?: string[]; labelKey: string; tab: string }> = [
   {
     icon: Zap,
     keywords: ['accounts', 'sign in', 'oauth', 'login', 'subscription', 'models', 'anthropic', 'openai'],
-    label: 'Providers',
+    labelKey: 'commandPalette.nav.providers',
     tab: 'providers&pview=accounts'
   },
   {
     icon: KeyRound,
     keywords: ['providers', 'api key', 'keys', 'secrets', 'tokens'],
-    label: 'Provider API keys',
+    labelKey: 'commandPalette.nav.providerApiKeys',
     tab: 'providers&pview=keys'
   },
-  { icon: Globe, keywords: ['connection', 'messaging'], label: 'Gateway', tab: 'gateway' },
-  {
-    icon: KeyRound,
-    keywords: ['api', 'secrets', 'tokens', 'credentials', 'browser', 'search'],
-    label: 'Tools & Keys',
-    tab: 'keys&kview=tools'
-  },
-  {
-    icon: Settings2,
-    keywords: ['gateway', 'proxy', 'server', 'webhook', 'env'],
-    label: 'Tools & Keys settings',
-    tab: 'keys&kview=settings'
-  },
-  { icon: Wrench, keywords: ['servers', 'tools'], label: 'MCP', tab: 'mcp' },
-  { icon: Archive, keywords: ['history', 'archived'], label: 'Archived Chats', tab: 'sessions' },
-  { icon: Info, keywords: ['version', 'about'], label: 'About', tab: 'about' }
+  { icon: Globe, keywords: ['connection', 'messaging'], labelKey: 'commandPalette.nav.gateway', tab: 'gateway' },
+  { icon: KeyRound, keywords: ['api', 'secrets', 'tokens', 'credentials'], labelKey: 'commandPalette.nav.toolsAndKeys', tab: 'keys' },
+  { icon: Wrench, keywords: ['servers', 'tools'], labelKey: 'commandPalette.nav.mcp', tab: 'mcp' },
+  { icon: Archive, keywords: ['history', 'archived'], labelKey: 'commandPalette.nav.archivedChats', tab: 'sessions' },
+  { icon: Info, keywords: ['version', 'about'], labelKey: 'commandPalette.nav.about', tab: 'about' }
 ]
 
-const THEME_MODES: ReadonlyArray<{ icon: IconComponent; label: string; mode: ThemeMode }> = [
-  { icon: Sun, label: 'Light', mode: 'light' },
-  { icon: Moon, label: 'Dark', mode: 'dark' },
-  { icon: Monitor, label: 'System', mode: 'system' }
+const THEME_MODES: ReadonlyArray<{ icon: IconComponent; labelKey: string; mode: ThemeMode }> = [
+  { icon: Sun, labelKey: 'commandPalette.theme.light', mode: 'light' },
+  { icon: Moon, labelKey: 'commandPalette.theme.dark', mode: 'dark' },
+  { icon: Monitor, labelKey: 'commandPalette.theme.system', mode: 'system' }
 ]
 
-function fieldLabel(key: string): string {
-  return FIELD_LABELS[key] ?? prettyName(key.split('.').pop() ?? key)
+function fieldLabel(key: string, t: TFunction): string {
+  const fieldKey = key.replaceAll('.', '__')
+
+  return t(`settings.fields.labels.${fieldKey}`, { defaultValue: FIELD_LABELS[key] ?? prettyName(key.split('.').pop() ?? key) })
 }
 
 export function CommandPalette() {
+  const { t } = useTranslation()
   const open = useStore($commandPaletteOpen)
   const navigate = useNavigate()
   const { availableThemes, mode, resolvedMode, setMode, setTheme, themeName } = useTheme()
@@ -186,46 +179,46 @@ export function CommandPalette() {
 
     return [
       {
-        heading: 'Go to',
+        heading: t('commandPalette.groups.goTo'),
         items: [
-          { icon: Plus, id: 'nav-new', keywords: ['chat', 'create'], label: 'New session', run: go(NEW_CHAT_ROUTE) },
-          { icon: Settings, id: 'nav-settings', label: 'Settings', run: go(SETTINGS_ROUTE) },
+          { icon: Plus, id: 'nav-new', keywords: ['chat', 'create'], label: t('chat.newSession'), run: go(NEW_CHAT_ROUTE) },
+          { icon: Settings, id: 'nav-settings', label: t('settings.title'), run: go(SETTINGS_ROUTE) },
           {
             icon: Wrench,
             id: 'nav-skills',
             keywords: ['tools', 'toolsets'],
-            label: 'Skills & Tools',
+            label: t('skills.title'),
             run: go(SKILLS_ROUTE)
           },
-          { icon: MessageCircle, id: 'nav-messaging', label: 'Messaging', run: go(MESSAGING_ROUTE) },
-          { icon: Package, id: 'nav-artifacts', label: 'Artifacts', run: go(ARTIFACTS_ROUTE) },
-          { icon: Clock, id: 'nav-cron', keywords: ['schedule', 'jobs'], label: 'Cron', run: go(CRON_ROUTE) },
-          { icon: Users, id: 'nav-profiles', label: 'Profiles', run: go(PROFILES_ROUTE) },
-          { icon: Cpu, id: 'nav-agents', label: 'Agents', run: go(AGENTS_ROUTE) }
+          { icon: MessageCircle, id: 'nav-messaging', label: t('messaging.title'), run: go(MESSAGING_ROUTE) },
+          { icon: Package, id: 'nav-artifacts', label: t('artifacts.title'), run: go(ARTIFACTS_ROUTE) },
+          { icon: Clock, id: 'nav-cron', keywords: ['schedule', 'jobs'], label: t('cron.title'), run: go(CRON_ROUTE) },
+          { icon: Users, id: 'nav-profiles', label: t('profiles.title'), run: go(PROFILES_ROUTE) },
+          { icon: Cpu, id: 'nav-agents', label: t('agents.title'), run: go(AGENTS_ROUTE) }
         ]
       },
       {
-        heading: 'Command Center',
+        heading: t('commandPalette.groups.commandCenter'),
         items: [
           {
             icon: Archive,
             id: 'cc-sessions',
             keywords: ['command center', 'sessions', 'pin'],
-            label: 'Sessions',
+            label: t('commandCenter.sections.sessions'),
             run: go(`${COMMAND_CENTER_ROUTE}?section=sessions`)
           },
           {
             icon: Activity,
             id: 'cc-system',
             keywords: ['command center', 'system', 'status', 'logs'],
-            label: 'System',
+            label: t('commandCenter.sections.system'),
             run: go(`${COMMAND_CENTER_ROUTE}?section=system`)
           },
           {
             icon: BarChart3,
             id: 'cc-usage',
             keywords: ['command center', 'usage', 'tokens', 'cost'],
-            label: 'Usage',
+            label: t('commandCenter.sections.usage'),
             run: go(`${COMMAND_CENTER_ROUTE}?section=usage`)
           }
         ]
@@ -234,45 +227,45 @@ export function CommandPalette() {
         // Declared before Settings: cmdk keeps group order, so this keeps the
         // theme/mode pickers on top for "theme"/"color" queries instead of
         // buried under a fuzzy Settings match.
-        heading: 'Appearance',
+        heading: t('commandPalette.groups.appearance'),
         items: [
           {
             icon: Palette,
             id: 'appearance-theme',
             keywords: ['theme', 'appearance', 'color', 'palette', 'skin', 'dark', 'light', 'look'],
-            label: 'Change theme…',
+            label: t('commandPalette.theme.changeTheme'),
             to: 'theme'
           },
           {
             icon: Sun,
             id: 'appearance-mode',
             keywords: ['appearance', 'color mode', 'brightness', 'dark', 'light', 'system'],
-            label: 'Change color mode…',
+            label: t('commandPalette.theme.changeColorMode'),
             to: 'color-mode'
           }
         ]
       },
       {
-        heading: 'Settings',
+        heading: t('settings.title'),
         items: [
           ...SECTIONS.map(section => ({
             icon: section.icon,
             id: `set-config-${section.id}`,
-            keywords: ['settings', section.label],
-            label: section.label,
+            keywords: ['settings', t(`settings.sections.${section.id}`, { defaultValue: section.label })],
+            label: t(`settings.sections.${section.id}`, { defaultValue: section.label }),
             run: go(settingsTab(`config:${section.id}`))
           })),
           ...NON_CONFIG_SETTINGS.map(entry => ({
             icon: entry.icon,
             id: `set-${entry.tab}`,
             keywords: ['settings', ...(entry.keywords ?? [])],
-            label: entry.label,
+            label: t(entry.labelKey),
             run: go(settingsTab(entry.tab))
           }))
         ]
       }
     ]
-  }, [go])
+  }, [go, t])
 
   // The long, granular lists (settings fields, API keys, MCP servers, archived
   // chats) only surface once the user types — otherwise they'd bury the
@@ -286,7 +279,7 @@ export function CommandPalette() {
 
     if (sessions.length > 0) {
       result.push({
-        heading: 'Sessions',
+        heading: t('sidebar.sessions'),
         items: sessions.map(session => ({
           icon: MessageCircle,
           id: `session-${session.id}`,
@@ -301,17 +294,17 @@ export function CommandPalette() {
       section.keys.map(key => ({
         icon: section.icon,
         id: `field-${key}`,
-        keywords: ['settings', key, section.label],
-        label: `${section.label}: ${fieldLabel(key)}`,
+        keywords: ['settings', key, t(`settings.sections.${section.id}`, { defaultValue: section.label })],
+        label: `${t(`settings.sections.${section.id}`, { defaultValue: section.label })}: ${fieldLabel(key, t)}`,
         run: go(`${SETTINGS_ROUTE}?tab=config:${section.id}&field=${encodeURIComponent(key)}`)
       }))
     )
 
-    result.push({ heading: 'Settings fields', items: fieldItems })
+    result.push({ heading: t('commandPalette.groups.settingsFields'), items: fieldItems })
 
     if (mcpServers.length > 0) {
       result.push({
-        heading: 'MCP servers',
+        heading: t('commandPalette.groups.mcpServers'),
         items: mcpServers.map(name => ({
           icon: Wrench,
           id: `mcp-${name}`,
@@ -324,7 +317,7 @@ export function CommandPalette() {
 
     if (archivedSessions.length > 0) {
       result.push({
-        heading: 'Archived chats',
+        heading: t('settings.nav.archivedChats'),
         items: archivedSessions.map(session => ({
           icon: Archive,
           id: `archived-${session.id}`,
@@ -336,7 +329,7 @@ export function CommandPalette() {
     }
 
     return result
-  }, [archivedSessions, go, mcpServers, search, sessions])
+  }, [archivedSessions, go, mcpServers, search, sessions, t])
 
   const groups = useMemo(() => [...baseGroups, ...searchGroups], [baseGroups, searchGroups])
 
@@ -345,13 +338,13 @@ export function CommandPalette() {
   const subPages = useMemo<Record<string, PalettePage>>(
     () => ({
       theme: {
-        title: 'Theme',
-        placeholder: 'Choose a theme…',
+        title: t('commandPalette.theme.title'),
+        placeholder: t('commandPalette.theme.placeholder'),
         // Skins aren't inherently light/dark — the same skin renders in either
         // mode. Group by appearance so picking an entry sets skin + mode at
         // once, and keep the palette open so each pick previews live.
         groups: (['light', 'dark'] as const).map(groupMode => ({
-          heading: groupMode === 'light' ? 'Light' : 'Dark',
+          heading: groupMode === 'light' ? t('commandPalette.theme.light') : t('commandPalette.theme.dark'),
           items: availableThemes.map(theme => ({
             active: themeName === theme.name && resolvedMode === groupMode,
             icon: groupMode === 'light' ? Sun : Moon,
@@ -367,30 +360,30 @@ export function CommandPalette() {
         }))
       },
       'color-mode': {
-        title: 'Color mode',
-        placeholder: 'Choose color mode…',
+        title: t('commandPalette.theme.colorMode'),
+        placeholder: t('commandPalette.theme.colorModePlaceholder'),
         groups: [
           {
-            heading: 'Color mode',
+            heading: t('commandPalette.theme.colorMode'),
             items: THEME_MODES.map(entry => ({
               active: mode === entry.mode,
               icon: entry.icon,
               id: `mode-${entry.mode}`,
               keepOpen: true,
-              keywords: ['appearance', 'brightness', entry.label],
-              label: entry.label,
+              keywords: ['appearance', 'brightness', t(entry.labelKey)],
+              label: t(entry.labelKey),
               run: () => setMode(entry.mode)
             }))
           }
         ]
       }
     }),
-    [availableThemes, mode, resolvedMode, setMode, setTheme, themeName]
+    [availableThemes, mode, resolvedMode, setMode, setTheme, t, themeName]
   )
 
   const activePage = page ? subPages[page] : null
   const visibleGroups = activePage ? activePage.groups : groups
-  const placeholder = activePage ? activePage.placeholder : 'Search commands and settings...'
+  const placeholder = activePage ? activePage.placeholder : t('commandPalette.searchPlaceholder')
 
   const handleSelect = (item: PaletteItem) => {
     if (item.to) {
@@ -415,7 +408,7 @@ export function CommandPalette() {
           aria-describedby={undefined}
           className="fixed left-1/2 top-[14vh] z-[210] w-[min(40rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-(--ui-stroke-secondary) bg-(--ui-chat-bubble-background) shadow-lg duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2 data-[state=open]:zoom-in-95"
         >
-          <DialogPrimitive.Title className="sr-only">Command palette</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">{t('commandPalette.dialogTitle')}</DialogPrimitive.Title>
           <Command className="bg-transparent" loop>
             {activePage && (
               <button
@@ -424,7 +417,7 @@ export function CommandPalette() {
                 type="button"
               >
                 <ChevronLeft className="size-3.5" />
-                <span>Back</span>
+                <span>{t('common.back')}</span>
                 <span className="text-muted-foreground/50">/</span>
                 <span className="font-medium text-foreground">{activePage.title}</span>
               </button>
@@ -448,7 +441,7 @@ export function CommandPalette() {
               value={search}
             />
             <CommandList className="max-h-[min(24rem,60vh)]">
-              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandEmpty>{t('commandPalette.noResults')}</CommandEmpty>
               {visibleGroups.map(group => (
                 <CommandGroup
                   className="**:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-[0.6875rem] **:[[cmdk-group-heading]]:text-muted-foreground/70"

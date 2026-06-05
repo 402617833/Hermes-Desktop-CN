@@ -1,0 +1,55 @@
+name: Desktop CN Checks
+
+on:
+  push:
+    branches: [cn-source]
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/desktop-cn-checks.yml'
+  pull_request:
+    branches: [cn-source]
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/desktop-cn-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-cn-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop-cn-checks:
+    name: Desktop CN checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Desktop i18n check
+        run: npm --prefix apps/desktop run i18n:check
+
+      - name: Type check
+        run: npm --prefix apps/desktop run type-check
+
+      - name: Lint
+        run: npm --prefix apps/desktop run lint
